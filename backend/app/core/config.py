@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
+        # .env.example 里留空的项（如 DATA_DIR=）按未设置处理，否则空路径会被解析为当前目录
+        env_ignore_empty=True,
         extra="ignore",
     )
 

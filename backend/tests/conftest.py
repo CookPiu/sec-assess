@@ -14,12 +14,14 @@ TEST_PASSWORD = "test-only-password"
 def app_env(tmp_path_factory: pytest.TempPathFactory):
     data_dir = tmp_path_factory.mktemp("data")
     os.environ["DATA_DIR"] = str(data_dir)
-    os.environ["DATABASE_URL"] = ""
+    os.environ.pop("DATABASE_URL", None)
     os.environ["SEED_PASSWORD"] = TEST_PASSWORD
     os.environ["JWT_SECRET"] = "test-only-jwt-secret-0123456789abcdef"
-    os.environ["LLM_API_KEY"] = ""
-    from app.core.config import get_settings
+    os.environ.pop("LLM_API_KEY", None)
+    from app.core.config import Settings, get_settings
 
+    # 测试不读取开发者本机的 .env，避免真实配置（如 LLM_API_KEY）影响结果
+    Settings.model_config["env_file"] = None
     get_settings.cache_clear()
     return data_dir
 
