@@ -154,7 +154,7 @@ async def run(ctx: TaskContext) -> None:
     if data is None:
         await ctx.log("任务不存在，跳过报告生成", "warn")
         return
-    llm = get_llm()
+    llm = get_llm(**ctx.runtime.llm_options())
     await make_patches(ctx, data, llm)
     ctx.check_stop()
 

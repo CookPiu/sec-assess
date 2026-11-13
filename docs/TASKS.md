@@ -72,9 +72,9 @@
 
 ## US6 系统管理（P3）
 
-- [ ] T048 配置接口：镜像列表、超时、资源配额、并发数、PyPI 地址、大模型参数与开关、网络策略只读，修改写审计日志（backend/app/api/settings.py）FR-018 FR-020
-- [ ] T049 [P] 沙箱与环境配置页、审计日志查询页（frontend/src/views/admin/）FR-018 FR-020
-- [ ] T050 权限测试：非管理员访问配置与审计接口返回 403，研发人员新建与停止评估返回 403（backend/tests/test_permissions.py）SC-009
+- [x] T048 配置接口：镜像列表、超时、资源配额、并发数、PyPI 地址、大模型参数与开关、网络策略只读，修改写审计日志（backend/app/api/settings.py）FR-018 FR-020
+- [x] T049 [P] 沙箱与环境配置页、审计日志查询页（frontend/src/views/admin/）FR-018 FR-020
+- [x] T050 权限测试：非管理员访问配置与审计接口返回 403，研发人员新建与停止评估返回 403（backend/tests/test_permissions.py）SC-009
 
 ## 收尾
 

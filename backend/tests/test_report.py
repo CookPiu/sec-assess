@@ -178,7 +178,7 @@ class FakeLLM:
 def test_agent_model_text_and_fallback(run_async, shop_task, monkeypatch) -> None:
     code = f"SA-{shop_task}-002"
     fake = FakeLLM({"conclusion": "模型写的结论", "actions": {code: "模型写的整改行动", "SA-0-999": "不存在的编号", f"SA-{shop_task}-003": " "}})
-    monkeypatch.setattr(report, "get_llm", lambda: fake)
+    monkeypatch.setattr(report, "get_llm", lambda **_: fake)
     run_async(report.run, make_ctx(shop_task, llm_enabled=True))
     # 补丁生成也会调用模型，这里只看撰写报告文字的那一次
     prompts = [p for p in fake.prompts if p.startswith("综合安全等级")]

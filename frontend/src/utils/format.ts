@@ -5,10 +5,11 @@ export function parseServerTime(value: string): Date {
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
-export function formatTime(value: string | null | undefined): string {
+export function formatTime(value: string | null | undefined, seconds = false): string {
   if (!value) return '—'
   const d = parseServerTime(value)
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}${seconds ? `:${pad(d.getSeconds())}` : ''}`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${time}`
 }
 
 export function formatClock(value: string): string {

@@ -211,7 +211,7 @@ async def run(ctx: TaskContext) -> None:
         return
     ctx.check_stop()
 
-    llm = get_llm()
+    llm = get_llm(**ctx.runtime.llm_options())
     enabled = ctx.runtime.llm_enabled
     if enabled and llm.configured:
         await ctx.log(f"交给大模型研判 {len(candidates)} 条候选，并发 {ctx.runtime.llm_concurrency}")

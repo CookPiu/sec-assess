@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 LABEL = "sec-assess"
 LABEL_TASK = "sec-assess.task"
 LABEL_INSTANCE = "sec-assess.instance"
+# sandbox-images/build.ps1 构建的镜像标签前缀
+IMAGE_PREFIX = "sec-assess/"
 SANDBOX_USER = "10001:10001"
 TIMEOUT_EXIT_CODE = 124  # coreutils timeout 超时退出码
 
@@ -95,6 +97,21 @@ class SandboxManager:
             return True
         except ImageNotFound:
             return False
+
+    def list_images(self, prefix: str = IMAGE_PREFIX) -> list[dict[str, object]]:
+        """本机已构建的沙箱镜像（标签以 prefix 开头），供配置页选择。"""
+        result: list[dict[str, object]] = []
+        for image in self.client.images.list():
+            for tag in image.tags:
+                if tag.startswith(prefix):
+                    result.append(
+                        {
+                            "tag": tag,
+                            "size_mb": round((image.attrs.get("Size") or 0) / 1024 / 1024, 1),
+                            "created": image.attrs.get("Created"),
+                        }
+                    )
+        return sorted(result, key=lambda item: str(item["tag"]))
 
     def create(
         self,

@@ -25,6 +25,8 @@ from app.sandbox.manager import SandboxError, SandboxManager, sandbox_manager
 logger = logging.getLogger(__name__)
 
 STOP_WAIT_SECONDS = 15
+# 单任务超时按分钟配置；测试里调小以免真的等满一分钟
+SECONDS_PER_MINUTE = 60
 
 
 class PipelineRunner:
@@ -133,7 +135,7 @@ class PipelineRunner:
     async def _run(self, ctx: TaskContext) -> None:
         status, error = TaskStatus.COMPLETED, None
         try:
-            async with asyncio.timeout(ctx.runtime.task_timeout_min * 60):
+            async with asyncio.timeout(ctx.runtime.task_timeout_min * SECONDS_PER_MINUTE):
                 await build_graph(ctx).ainvoke({"task_id": ctx.task_id, "stages_done": []})
         except (asyncio.CancelledError, StopRequested):
             if self._shutting_down:

@@ -100,7 +100,11 @@ def fake(monkeypatch, client: TestClient, run_async):
     sandbox = FakeSandbox()
     monkeypatch.setattr(runner, "manager", sandbox)
     yield sandbox
-    # 停掉本测试遗留的任务，避免占住并发名额
+    stop_leftover_tasks(run_async)
+
+
+def stop_leftover_tasks(run_async) -> None:
+    """停掉本测试遗留的任务，避免占住并发名额。"""
     for task_id in list(runner._running):
         run_async(runner.stop, task_id)
 

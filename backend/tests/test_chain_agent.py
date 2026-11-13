@@ -151,7 +151,7 @@ class FakeLLM:
 
 def test_agent_uses_model_text_and_falls_back(client: TestClient, login, run_async, shop_facts, monkeypatch) -> None:
     fake = FakeLLM()
-    monkeypatch.setattr(chain, "get_llm", lambda: fake)
+    monkeypatch.setattr(chain, "get_llm", lambda **_: fake)
     task_id = seed(run_async, shop_facts)
     run_async(chain.run, make_ctx(task_id, llm_enabled=True))
     assert len(fake.prompts) == 8

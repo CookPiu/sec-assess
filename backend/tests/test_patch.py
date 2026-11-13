@@ -325,7 +325,7 @@ def test_report_stage_skips_patches_without_model(run_async, patch_task) -> None
 def test_report_stage_generates_patches(run_async, patch_task, monkeypatch) -> None:
     task_id, root = patch_task
     fake = FakeLLM()
-    monkeypatch.setattr(report, "get_llm", lambda: fake)
+    monkeypatch.setattr(report, "get_llm", lambda **_: fake)
     run_async(report.run, ctx_for(task_id, root, llm_enabled=True))
 
     patches = run_async(task_patches, task_id)
@@ -344,7 +344,7 @@ def test_report_stage_generates_patches(run_async, patch_task, monkeypatch) -> N
 @needs_git
 def test_patch_api(client: TestClient, login, run_async, patch_task, monkeypatch) -> None:
     task_id, root = patch_task
-    monkeypatch.setattr(report, "get_llm", lambda: FakeLLM())
+    monkeypatch.setattr(report, "get_llm", lambda **_: FakeLLM())
     run_async(report.run, ctx_for(task_id, root, llm_enabled=True))
     fid = run_async(finding_id, f"SA-{task_id}-001")
     engineer, developer, admin = login("engineer"), login("developer"), login("admin")

@@ -1,5 +1,7 @@
+import type { AuditAction } from '@/api/audit'
 import type { Access, FindingBrief } from '@/api/findings'
 import type { SecurityLevel } from '@/api/reports'
+import type { SettingKey } from '@/api/settings'
 import type { Severity, StageKey, TaskStatus } from '@/api/tasks'
 
 export const STAGES: { key: StageKey; label: string }[] = [
@@ -80,4 +82,45 @@ export const FINDING_GROUP_META = Object.fromEntries(FINDING_GROUPS.map((g) => [
 export function findingGroup(f: Pick<FindingBrief, 'status' | 'model_false_positive'>): FindingGroup {
   if (f.model_false_positive) return 'false_positive'
   return f.status === 'verified' ? 'verified' : 'unverified'
+}
+
+export const AUDIT_ACTIONS: { key: AuditAction; label: string; tag: TagType }[] = [
+  { key: 'login', label: '登录', tag: 'info' },
+  { key: 'login_failed', label: '登录失败', tag: 'danger' },
+  { key: 'task_create', label: '新建评估', tag: 'primary' },
+  { key: 'task_stop', label: '停止评估', tag: 'warning' },
+  { key: 'patch_adopt', label: '采纳补丁', tag: 'success' },
+  { key: 'report_export', label: '导出报告', tag: 'primary' },
+  { key: 'setting_update', label: '修改配置', tag: 'warning' },
+]
+
+export const AUDIT_ACTION_META = Object.fromEntries(AUDIT_ACTIONS.map((a) => [a.key, a])) as Record<
+  AuditAction,
+  (typeof AUDIT_ACTIONS)[number]
+>
+
+/** 配置项名称与单位，配置页和审计日志共用 */
+export const SETTING_META: Record<SettingKey, { label: string; unit?: string }> = {
+  sandbox_image: { label: '沙箱镜像' },
+  cpus: { label: 'CPU 核数', unit: '核' },
+  memory_mb: { label: '内存上限', unit: 'MB' },
+  pids: { label: '进程数上限', unit: '个' },
+  task_timeout_min: { label: '单任务超时', unit: '分钟' },
+  probe_timeout_s: { label: '单探针超时', unit: '秒' },
+  max_concurrent: { label: '并发任务数', unit: '个' },
+  network_policy: { label: '网络隔离策略' },
+  pypi_index_url: { label: 'PyPI 地址' },
+  llm_enabled: { label: '大模型开关' },
+  llm_model: { label: '模型名称' },
+  llm_base_url: { label: '接口地址' },
+  llm_timeout_seconds: { label: '请求超时', unit: '秒' },
+  llm_concurrency: { label: '大模型并发数', unit: '个' },
+}
+
+/** 配置项的值按页面上的写法显示，例如 1024 MB、已开启 */
+export function formatSettingValue(key: string, value: unknown): string {
+  if (typeof value === 'boolean') return value ? '已开启' : '已关闭'
+  if (value === null || value === undefined || value === '') return '空'
+  const unit = SETTING_META[key as SettingKey]?.unit
+  return unit ? `${value} ${unit}` : String(value)
 }

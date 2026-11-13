@@ -198,7 +198,7 @@ async def run(ctx: TaskContext) -> None:
 
     texts: list[tuple[str, str, bool]] = []
     if graph.paths:
-        llm = get_llm()
+        llm = get_llm(**ctx.runtime.llm_options())
         enabled = ctx.runtime.llm_enabled
         if enabled and llm.configured:
             await ctx.log(f"交给大模型撰写 {len(graph.paths)} 条路径的阶段说明与业务危害")
