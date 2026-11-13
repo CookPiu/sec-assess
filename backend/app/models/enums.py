@@ -86,6 +86,15 @@ class Severity(StrEnum):
     INFO = "info"
 
 
+SEVERITY_LABELS: dict[Severity, str] = {
+    Severity.CRITICAL: "严重",
+    Severity.HIGH: "高危",
+    Severity.MEDIUM: "中危",
+    Severity.LOW: "低危",
+    Severity.INFO: "信息",
+}
+
+
 class VerifyStatus(StrEnum):
     VERIFIED = "verified"
     UNVERIFIED = "unverified"

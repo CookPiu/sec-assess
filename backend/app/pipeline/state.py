@@ -17,6 +17,7 @@ from app.core.events import bus
 from app.core.runtime import RuntimeConfig
 from app.models import Project, StageLog, Task
 from app.models.enums import STAGE_LABELS, Stage
+from app.sandbox.deps import wheelhouse_dir
 from app.sandbox.manager import Quota, SandboxManager
 from app.sandbox.stats import StatsSampler
 
@@ -83,9 +84,11 @@ class TaskContext:
     async def start_sandbox(self) -> None:
         """创建任务容器并开始资源采样；容器由 runner 在任务结束时销毁。"""
         quota = Quota(cpus=self.runtime.cpus, memory_mb=self.runtime.memory_mb, pids=self.runtime.pids)
+        wheels = wheelhouse_dir()
+        wheels.mkdir(parents=True, exist_ok=True)
         self.container_started = True
         container_id = await asyncio.to_thread(
-            self.sandbox.create, self.task_id, self.source_dir, self.runtime.sandbox_image, quota
+            self.sandbox.create, self.task_id, self.source_dir, self.runtime.sandbox_image, quota, wheels_dir=wheels
         )
         async with session_factory()() as session:
             task = await session.get(Task, self.task_id)

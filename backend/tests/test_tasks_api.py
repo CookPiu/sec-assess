@@ -12,10 +12,11 @@ from docker.errors import NotFound
 from fastapi.testclient import TestClient
 from sqlalchemy import select, update
 
-from app.models import Project, Task
+from app.models import Finding, Project, TaintStep, Task
 from app.models.enums import Stage, TaskStatus
 from app.pipeline import graph
 from app.pipeline.runner import runner
+from app.sandbox.manager import ExecResult
 
 FLASK_APP = b"""from flask import Flask
 
@@ -56,6 +57,9 @@ class FakeSandbox:
 
     def destroy(self, task_id: int) -> None:
         self.destroyed.append(task_id)
+
+    def exec(self, task_id: int, cmd, **_kw) -> ExecResult:  # 依赖准备读不到解释器信息，记为准备失败
+        return ExecResult(exit_code=1, stdout="", stderr="fake sandbox")
 
     def cleanup_leftovers(self) -> int:
         return 0
@@ -148,6 +152,69 @@ def test_zip_task_runs_all_stages(client: TestClient, login, fake: FakeSandbox, 
     again = client.post("/api/tasks", headers=headers, data={"project_id": str(body["project_id"])})
     assert again.status_code == 201, again.text
     assert wait_for(client, headers, again.json()["id"], finished)["status"] == "completed"
+
+
+VULN_APP = b"""import sqlite3
+
+from flask import Flask, request
+
+app = Flask(__name__)
+
+
+@app.get("/search")
+def search():
+    q = request.args.get("q", "")
+    sql = f"SELECT name FROM item WHERE name = '{q}'"
+    return str(sqlite3.connect("shop.db").execute(sql).fetchall())
+
+
+if __name__ == "__main__":
+    app.run(port=8000, debug=True)
+"""
+
+
+def test_code_audit_stores_findings_and_recon_facts(client: TestClient, login, fake: FakeSandbox, run_async) -> None:
+    headers = login("engineer")
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("vuln/app.py", VULN_APP)
+    resp = create_zip_task(client, headers, name="vuln.zip", data=buf.getvalue())
+    assert resp.status_code == 201, resp.text
+    task_id = resp.json()["id"]
+    body = wait_for(client, headers, task_id, finished)
+    assert body["status"] == "completed", body
+
+    async def load():
+        from app.core.db import session_factory
+
+        async with session_factory()() as session:
+            task = await session.get(Task, task_id)
+            findings = (await session.execute(select(Finding).where(Finding.task_id == task_id))).scalars().all()
+            steps = (
+                await session.execute(
+                    select(TaintStep).where(TaintStep.finding_id.in_([f.id for f in findings])).order_by(TaintStep.seq)
+                )
+            ).scalars().all()
+            return task.recon, findings, steps
+
+    recon_result, findings, steps = run_async(load)
+    facts = recon_result["facts"]
+    assert facts["entry"]["port"] == 8000 and facts["entry"]["debug"] is True
+    assert [r["path"] for r in facts["routes"]] == ["/search"]
+
+    by_cat = {f.category: f for f in findings}
+    assert set(by_cat) == {"sql_injection", "debug_mode"}
+    sql = by_cat["sql_injection"]
+    assert sql.code == f"SA-{task_id}-001"
+    assert sql.status == "unverified" and sql.judged_by == "default" and "未经模型研判" in sql.reason
+    assert sql.route == {"path": "/search", "methods": ["GET"], "access": "anonymous"}
+    sql_steps = [s for s in steps if s.finding_id == sql.id]
+    assert sql_steps[0].note.startswith("读取用户输入") and sql_steps[-1].line == sql.line
+
+    logs = [x["message"] for x in client.get(f"/api/tasks/{task_id}/logs", headers=headers).json()]
+    assert any(m.startswith("启动方式：app.py 第 16 行调用 app.run") for m in logs)
+    assert any(m.startswith(f"SA-{task_id}-001 ") for m in logs)
+    assert any(m.startswith("研判完成：") for m in logs)
 
 
 def test_stop_running_and_queued_tasks(client: TestClient, login, fake: FakeSandbox, monkeypatch) -> None:

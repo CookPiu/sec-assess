@@ -10,6 +10,7 @@ dependencies = [
     "fastapi>=0.116.0",
     "langgraph>=1.2.21",
     "openai>=1.60.0",
+    "pip>=26.3",
     "pydantic-settings>=2.10.1",
     "pydantic>=2.11.0",
     "pyjwt>=2.10.1",
@@ -29,4 +30,5 @@ testpaths = ["tests"]
 pythonpath = ["."]
 markers = [
     "docker: 需要本机 Docker 已启动且沙箱镜像已构建",
+    "network: 需要访问 PyPI 等外部网络",
 ]

@@ -25,7 +25,7 @@
 | 前端 | Vue 3 + Vite + TypeScript + Element Plus + Pinia，pnpm 管理依赖 | 与提单助手统一 |
 | 前端可视化 | Monaco Editor（代码高亮与 Diff）、AntV G6（攻击路径 DAG，dagre 布局）、ECharts（统计图） | |
 
-新增依赖说明：相对兄弟项目，本项目新增 `docker`（管理沙箱）、`bcrypt`（密码哈希）、`openai`（调用 DeepSeek 的 OpenAI 兼容接口）、`playwright`（只用于 PDF 导出，首次使用需执行 `playwright install chromium`）。
+新增依赖说明：相对兄弟项目，本项目新增 `docker`（管理沙箱）、`bcrypt`（密码哈希）、`openai`（调用 DeepSeek 的 OpenAI 兼容接口）、`playwright`（只用于 PDF 导出，首次使用需执行 `playwright install chromium`）、`pip`（uv 建的虚拟环境不带 pip，依赖准备要在宿主机执行 `pip download`）。
 
 ## 3. 目录结构
 
@@ -61,7 +61,7 @@ sec-assess/
 - 源码以只读方式挂载到 `/src`；需要运行工程时复制到任务专属 Docker 卷 `/work`（工程副本与虚拟环境），写操作只发生在副本里，卷随容器一起删除（D-016）。`/tmp` 为 64 MB tmpfs。
 - 根文件系统只读，`--network none`，丢弃全部 capabilities，`no-new-privileges`，非 root 用户运行。
 - CPU、内存、进程数上限和任务总超时从配置页读取。
-- 依赖准备（D-012）：宿主机用后端虚拟环境里的 pip，按 `requirements.txt` / `pyproject.toml` 执行 `pip download --only-binary=:all: --python-version 3.12`，`--platform` 取沙箱镜像 glibc 对应的 manylinux 标签，只取预编译 wheel，不执行任何构建脚本。wheel 缓存在 `data/wheelhouse/`，以只读方式挂到容器的 `/wheels`，由容器内 `pip install --no-index --find-links /wheels` 装进 `/work/venv`。某个包只有源码包或下载失败时改用镜像预装的版本；仍有缺失则跳过动态验证，相关漏洞保持“疑似”。PyPI 地址可在配置页改为镜像源。
+- 依赖准备（D-012）：宿主机用后端虚拟环境里的 pip，按 `requirements.txt` / `pyproject.toml` 执行 `pip download --only-binary=:all: --python-version 3.12`，`--platform` 取沙箱镜像 glibc 对应的 manylinux 标签（在任务容器内读取 glibc 版本得到），只取预编译 wheel，不执行任何构建脚本。整批下载失败时逐个重试以找出拿不到 wheel 的包，连不上索引时不再重试。wheel 缓存在 `data/wheelhouse/`，以只读方式挂到容器的 `/wheels`，由容器内 `pip install --no-index --find-links /wheels` 装进 `/work/venv`。某个包只有源码包或下载失败时改用镜像预装的版本；仍有缺失则跳过动态验证，相关漏洞保持“疑似”。PyPI 地址可在配置页改为镜像源。
 - 停止任务时后端直接 `docker kill` 并删除容器和任务卷，已写入数据库的阶段结果保留，任务状态置为 `stopped`；流水线中后续的容器调用失败后按已停止收尾。
 - 资源指标通过 Docker stats 接口每 2 秒采样一次，经 SSE 推到前端。
 - 隔离自检（SC-007）：集成测试在容器内尝试访问外部地址、写 `/src`、以 root 身份执行，三者都必须失败。网络隔离策略固定为 `none`，配置页只展示；并发任务数默认 1，超出的任务保持 `created` 排队（D-019）。
@@ -79,7 +79,7 @@ recon → code_audit → poc_verify → exploit_chain → report_gen
 
 Git 项目首次评估时在本阶段浅克隆仓库（失败则任务置为 `failed`），zip 项目在上传时已同步校验并解压；源码就绪后创建任务容器并开始资源采样。
 
-确定性解析 `requirements.txt`、`pyproject.toml`、`package.json`、`pom.xml` 等，统计代码行数，用 AST 提取 Flask 路由表（URL、方法、处理函数、装饰器）。大模型只负责把结果整理成侦察摘要。
+确定性解析 `requirements.txt`、`pyproject.toml`、`package.json`、`pom.xml` 等，统计代码行数，用 AST 提取 Flask 路由表（URL、方法、处理函数、装饰器）。测试代码（`tests/`、`test/`、`testing/` 目录与 `test_*.py`、`*_test.py`、`conftest.py`）不参与路由提取和后续审计（D-020）。大模型只负责把结果整理成侦察摘要。
 
 同时记录后续阶段要用的事实，存为任务的侦察结果：
 
@@ -93,8 +93,8 @@ Python 工程在本阶段末尾完成依赖准备（第 4 节），准备结果�
 ### 5.2 源码审计（code_audit）
 
 1. 污点引擎按文件并行解析全部 Python 文件，建立函数级调用图，从 Source（请求参数、表单、JSON、文件、Header、Cookie）沿赋值、拼接、函数参数和返回值传播，到达 Sink（SQL 执行、命令执行、反序列化、文件路径操作、模板渲染等）且途中没有经过已登记的净化函数时，生成一条候选漏洞，并记录每一步的文件、行号和变量名。拼接包括 `+`、f-string、`%` 和 `str.format`；跨文件调用最多追 3 层，类属性、容器元素和动态调用不追踪（D-018）。
-2. 鉴权类问题单独规则：路由带资源 ID 参数、查询时未按当前用户过滤、且没有登录或权限装饰器，记为越权候选。
-3. 敏感信息规则：硬编码密钥、调试开关、对外暴露的配置文件。
+2. 鉴权类问题单独规则：非管理员路由带资源 ID 参数，处理函数用它查询数据，而处理函数及其直接调用的工程内函数里都没有按当前用户过滤或比对，记为越权候选；匿名可访问、不是注册登录类接口的路由查询用户数据，记为缺失鉴权候选。
+3. 敏感信息规则：硬编码密钥、调试开关、对外暴露的配置文件，以及侦察得到的明文或无盐哈希密码存储。
 4. 审计 Agent 拿到每条候选及其上下文代码，由大模型判断是否误报、归类并给出 CVSS 3.1 向量；分数由程序按 3.1 基础分公式从向量计算（D-015）。结论附理由，状态统一为 `Unverified`；模型判为误报的放入“模型判定误报”分组，不计入评分。研判默认 4 路并发。
 5. 发给模型的只有候选所在函数和污点轨迹涉及的代码片段。模型不可用或在配置页被关闭时，按漏洞类别的默认向量计分，理由标注“未经模型研判”。
 

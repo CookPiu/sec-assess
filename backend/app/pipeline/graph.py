@@ -12,7 +12,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 from app.models.enums import STAGE_ORDER, Stage
-from app.pipeline.agents import recon
+from app.pipeline.agents import audit, recon
 from app.pipeline.agents.placeholder import placeholder
 from app.pipeline.state import PipelineState, TaskContext
 
@@ -20,7 +20,7 @@ StageAgent = Callable[[TaskContext], Awaitable[None]]
 
 AGENTS: dict[Stage, StageAgent] = {
     Stage.RECON: recon.run,
-    Stage.CODE_AUDIT: placeholder("T020–T023"),
+    Stage.CODE_AUDIT: audit.run,
     Stage.POC_VERIFY: placeholder("T024–T026"),
     Stage.EXPLOIT_CHAIN: placeholder("T035–T036"),
     Stage.REPORT_GEN: placeholder("T038–T041"),
