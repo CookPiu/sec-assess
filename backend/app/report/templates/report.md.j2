@@ -111,6 +111,8 @@
 **修复补丁**
 
 {% if f.patch %}
+采纳状态：{{ f.patch_state | md }}
+
 {{ f.patch | fence("diff") }}
 {% else %}
 暂无修复补丁。

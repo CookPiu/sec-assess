@@ -55,8 +55,13 @@ class LLMClient:
     def configured(self) -> bool:
         return self._client is not None
 
-    async def chat_json(self, system: str, user: str, *, enabled: bool = True) -> dict[str, Any] | None:
-        """要求模型输出 JSON 对象。未配置、被关闭、超时或输出不合法时返回 None。"""
+    async def chat_json(
+        self, system: str, user: str, *, enabled: bool = True, timeout: float | None = None
+    ) -> dict[str, Any] | None:
+        """要求模型输出 JSON 对象。未配置、被关闭、超时或输出不合法时返回 None。
+
+        timeout 为单次请求超时（秒），不传时用配置值；输出较长的调用（如补丁）可以放宽。
+        """
         if not enabled or self._client is None:
             return None
         if len(system) + len(user) > MAX_INPUT_CHARS:
@@ -67,6 +72,7 @@ class LLMClient:
                 messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
                 response_format={"type": "json_object"},
                 temperature=0,
+                **({"timeout": timeout} if timeout else {}),
             )
         except OpenAIError as exc:
             logger.warning("大模型调用失败：%s", type(exc).__name__)

@@ -7,6 +7,7 @@ import type { LineMark } from '@/components/CodeViewer.vue'
 import { formatTime } from '@/utils/format'
 import { ACCESS_LABELS, CATEGORY_LABELS, FINDING_GROUP_META, findingGroup, SEVERITY_META } from '@/utils/labels'
 import { languageOf } from '@/utils/language'
+import PatchPanel from '@/views/workbench/PatchPanel.vue'
 
 // Monaco 体积大，打开漏洞详情时才加载
 const CodeViewer = defineAsyncComponent(() => import('@/components/CodeViewer.vue'))
@@ -246,6 +247,12 @@ const evidenceHint = computed(() => {
           </el-tab-pane>
         </el-tabs>
       </div>
+
+      <!-- 只为已验证漏洞生成补丁（FR-012） -->
+      <template v-if="detail.status === 'verified'">
+        <div class="section-title"><span>修复补丁</span></div>
+        <PatchPanel :finding-id="detail.id" :revision="revision" class="block" />
+      </template>
     </template>
   </div>
 </template>

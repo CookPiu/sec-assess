@@ -34,4 +34,5 @@ pythonpath = ["."]
 markers = [
     "docker: 需要本机 Docker 已启动且沙箱镜像已构建",
     "network: 需要访问 PyPI 等外部网络",
+    "llm: 需要仓库根目录 .env 中可用的大模型配置",
 ]

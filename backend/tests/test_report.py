@@ -168,7 +168,9 @@ class FakeLLM:
         self.reply = reply
         self.prompts: list[str] = []
 
-    async def chat_json(self, system: str, user: str, *, enabled: bool = True) -> dict[str, Any] | None:
+    async def chat_json(
+        self, system: str, user: str, *, enabled: bool = True, timeout: float | None = None
+    ) -> dict[str, Any] | None:
         self.prompts.append(user)
         return self.reply
 
@@ -178,8 +180,10 @@ def test_agent_model_text_and_fallback(run_async, shop_task, monkeypatch) -> Non
     fake = FakeLLM({"conclusion": "模型写的结论", "actions": {code: "模型写的整改行动", "SA-0-999": "不存在的编号", f"SA-{shop_task}-003": " "}})
     monkeypatch.setattr(report, "get_llm", lambda: fake)
     run_async(report.run, make_ctx(shop_task, llm_enabled=True))
-    assert len(fake.prompts) == 1
-    assert "综合安全等级：极高危" in fake.prompts[0] and f"- {code} [P1 立即修复] SQL 注入" in fake.prompts[0]
+    # 补丁生成也会调用模型，这里只看撰写报告文字的那一次
+    prompts = [p for p in fake.prompts if p.startswith("综合安全等级")]
+    assert len(prompts) == 1
+    assert "综合安全等级：极高危" in prompts[0] and f"- {code} [P1 立即修复] SQL 注入" in prompts[0]
     saved = run_async(saved_report, shop_task)
     assert saved.written_by == "model" and saved.conclusion == "模型写的结论"
     assert saved.actions == {code: "模型写的整改行动"}

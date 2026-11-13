@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter, defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
@@ -33,6 +33,7 @@ from app.models import (
     StageLog,
     TaintStep,
     Task,
+    User,
 )
 from app.models.enums import (
     CATEGORY_LABELS,
@@ -99,6 +100,8 @@ class ReportData:
     paths: list[AttackPath]
     logs: list[StageLog]
     report: Report | None
+    # 采纳补丁的用户名，按用户 ID
+    adopters: dict[int, str] = field(default_factory=dict)
 
     @property
     def counted(self) -> list[Finding]:
@@ -182,7 +185,13 @@ async def load_report_data(task_id: int) -> ReportData | None:
             (await session.execute(select(StageLog).where(StageLog.task_id == task_id).order_by(StageLog.id))).scalars()
         )
         report = (await session.execute(select(Report).where(Report.task_id == task_id))).scalar_one_or_none()
-    return ReportData(task, project, findings, steps, evidence, patches, nodes, edges, paths, logs, report)
+        adopter_ids = {p.adopted_by for p in patches.values() if p.adopted_by is not None}
+        adopters = (
+            dict((await session.execute(select(User.id, User.username).where(User.id.in_(adopter_ids)))).all())
+            if adopter_ids
+            else {}
+        )
+    return ReportData(task, project, findings, steps, evidence, patches, nodes, edges, paths, logs, report, adopters)
 
 
 # ---------- 文字整理 ----------
@@ -330,7 +339,7 @@ def _stage_rows(data: ReportData, score: int, level: str) -> list[dict[str, str]
         f"{len(data.findings) - by_model} 条，判定误报 {len(data.findings) - len(counted)} 条",
         Stage.POC_VERIFY: f"验证通过 {verified} 条，保持疑似 {len(counted) - verified} 条",
         Stage.EXPLOIT_CHAIN: f"进入攻击路径图的漏洞 {in_graph} 条，多步攻击路径 {len(data.paths)} 条",
-        Stage.REPORT_GEN: f"安全评分 {score}，综合安全等级{level}",
+        Stage.REPORT_GEN: f"修复补丁 {len(data.patches)} 条，安全评分 {score}，综合安全等级{level}",
     }
     rows = []
     for stage in STAGE_ORDER:
@@ -411,7 +420,17 @@ def _verified_item(data: ReportData, f: Finding) -> dict[str, Any]:
         ],
         "evidence": evidence,
         "patch": patch.diff if patch else None,
+        "patch_state": _patch_state(data, patch),
     }
+
+
+def _patch_state(data: ReportData, patch: Patch | None) -> str:
+    if patch is None:
+        return ""
+    if not patch.adopted:
+        return "未采纳"
+    who = data.adopters.get(patch.adopted_by, "已删除的用户") if patch.adopted_by is not None else "已删除的用户"
+    return f"已采纳，采纳人 {who}，采纳时间 {local_time(patch.adopted_at)}"
 
 
 def _remediation(data: ReportData) -> list[dict[str, Any]]:

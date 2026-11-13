@@ -64,11 +64,11 @@
 
 ## US5 查看与采纳修复补丁（P2）
 
-- [ ] T043 补丁生成：大模型输出修复后的完整函数，`difflib` 生成 unified diff（backend/app/patch/）FR-012 D-009
-- [ ] T044 补丁接入 report_gen 阶段与报告章节（backend/app/pipeline/agents/report.py、backend/app/report/templates/）FR-012 FR-015
-- [ ] T045 补丁接口：查询、下载 .patch、采纳并写审计日志（backend/app/api/patches.py）FR-013 FR-020
-- [ ] T046 [P] 补丁 Diff 区：Monaco DiffEditor 左右对比、复制、下载、采纳按钮（frontend/src/views/workbench/PatchPanel.vue）FR-013
-- [ ] T047 补丁端到端检查：靶场每条 Verified 漏洞都有补丁，全部通过 `git apply --check`（backend/tests/e2e/test_patches.py）SC-003
+- [x] T043 补丁生成：大模型输出修复后的完整函数，`difflib` 生成 unified diff（backend/app/patch/）FR-012 D-009
+- [x] T044 补丁接入 report_gen 阶段与报告章节（backend/app/pipeline/agents/report.py、backend/app/report/templates/）FR-012 FR-015
+- [x] T045 补丁接口：查询、下载 .patch、采纳并写审计日志（backend/app/api/patches.py）FR-013 FR-020
+- [x] T046 [P] 补丁 Diff 区：Monaco DiffEditor 左右对比、复制、下载、采纳按钮（frontend/src/views/workbench/PatchPanel.vue）FR-013
+- [x] T047 补丁端到端检查：靶场每条 Verified 漏洞都有补丁，全部通过 `git apply --check`（backend/tests/e2e/test_patches.py）SC-003
 
 ## US6 系统管理（P3）
 
