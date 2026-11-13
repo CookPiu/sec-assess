@@ -106,3 +106,21 @@ def score(vector: str) -> tuple[float, Severity]:
 
 def default_vector(category: Category | str) -> str:
     return DEFAULT_VECTORS[Category(category)]
+
+
+EXPLOITABILITY_METRICS = ("AV", "AC", "PR", "UI")
+# 路由访问前提对应的权限要求
+ACCESS_PRIVILEGES = {"anonymous": "N", "user": "L", "admin": "H"}
+
+
+def anchor_vector(vector: str, category: Category | str, access: str | None = None) -> str:
+    """可利用性指标取类别默认向量，权限要求按路由访问前提；影响范围与三项影响沿用 vector（D-029）。
+
+    模型给出的向量在多次评估间会变动，固定可利用性指标后，同一漏洞的分数只随影响判断变化。
+    """
+    metrics = parse_vector(vector)
+    fixed = parse_vector(default_vector(category))
+    metrics.update({key: fixed[key] for key in EXPLOITABILITY_METRICS})
+    if access in ACCESS_PRIVILEGES:
+        metrics["PR"] = ACCESS_PRIVILEGES[access]
+    return "CVSS:3.1/" + "/".join(f"{key}:{metrics[key]}" for key in BASE_METRICS)

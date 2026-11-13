@@ -1,6 +1,6 @@
 import pytest
 
-from app.core.cvss import CvssError, DEFAULT_VECTORS, base_score, parse_vector, score, severity_of
+from app.core.cvss import CvssError, DEFAULT_VECTORS, anchor_vector, base_score, parse_vector, score, severity_of
 from app.models.enums import Category, Severity
 
 
@@ -61,3 +61,14 @@ def test_every_category_has_valid_default_vector() -> None:
     for vector in DEFAULT_VECTORS.values():
         value, _ = score(vector)
         assert 0 < value <= 10
+
+
+def test_anchor_vector_fixes_exploitability_metrics() -> None:
+    """可利用性指标取类别默认值，权限要求按路由访问前提，影响范围与三项影响沿用模型给出的值（D-029）。"""
+    model = "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:C/C:H/I:L/A:N"
+    assert anchor_vector(model, Category.SQL_INJECTION) == "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N"
+    assert anchor_vector(model, Category.HARDCODED_SECRET) == "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:L/A:N"
+    assert anchor_vector(model, Category.TEMPLATE_INJECTION, "admin") == "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:L/A:N"
+    assert anchor_vector(model, Category.IDOR, "anonymous").split("/")[3] == "PR:N"
+    with pytest.raises(CvssError):
+        anchor_vector("not a vector", Category.SQL_INJECTION)

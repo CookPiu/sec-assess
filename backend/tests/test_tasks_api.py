@@ -261,7 +261,17 @@ def test_stop_running_and_queued_tasks(client: TestClient, login, fake: FakeSand
 
 
 def test_stage_failure_marks_task_failed(client: TestClient, login, fake: FakeSandbox, monkeypatch) -> None:
-    async def broken(_ctx) -> None:
+    async def broken(ctx) -> None:
+        from app.core.db import session_factory
+
+        async with session_factory()() as session:
+            session.add(
+                Finding(
+                    task_id=ctx.task_id, code=f"SA-{ctx.task_id}-001", category="hardcoded_secret", title="密钥",
+                    severity="critical", cvss_score=9.1, file="app.py", line=1, status="unverified",
+                )
+            )
+            await session.commit()
         raise RuntimeError("boom")
 
     monkeypatch.setitem(graph.AGENTS, Stage.POC_VERIFY, broken)
@@ -272,6 +282,9 @@ def test_stage_failure_marks_task_failed(client: TestClient, login, fake: FakeSa
     assert body["current_stage"] == "poc_verify"
     assert "boom" in body["error"]
     assert task["id"] in fake.destroyed
+    # 没走完动态验证，收尾时疑似漏洞封顶为中危（D-029）
+    findings = client.get(f"/api/tasks/{task['id']}/findings", headers=headers).json()
+    assert [(f["status"], f["severity"], f["cvss_score"]) for f in findings] == [("unverified", "medium", 9.1)]
 
 
 def test_create_task_validation(client: TestClient, login, fake: FakeSandbox, run_async) -> None:

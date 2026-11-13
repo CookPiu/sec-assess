@@ -1,6 +1,7 @@
 """动态验证（DESIGN.md 5.3）：启动工程副本，执行无害用例，命中特征改判 Verified。
 
 依赖未准备好或工程无法在沙箱内启动时跳过整个阶段，相关漏洞保持疑似。
+阶段结束时仍为疑似的漏洞严重等级封顶为中危（FR-010、D-029）；阶段中途停止或失败时由 runner 收尾封顶。
 """
 
 from __future__ import annotations
@@ -8,11 +9,11 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.core.db import session_factory
 from app.models import Finding, TaintStep, Task
-from app.models.enums import VerifyStatus
+from app.models.enums import Severity, VerifyStatus
 from app.pipeline.state import TaskContext
 from app.project.pysource import ProjectIndex
 from app.sandbox.manager import SandboxError
@@ -65,7 +66,30 @@ async def _load(task_id: int) -> tuple[dict[str, Any], dict[str, Any], list[dict
     return facts, dependencies, findings
 
 
+async def cap_unverified(task_id: int) -> int:
+    """把疑似漏洞中的严重、高危降为中危，返回改动条数。CVSS 分数与向量保留模型研判的结果。"""
+    async with session_factory()() as session:
+        result = await session.execute(
+            update(Finding)
+            .where(
+                Finding.task_id == task_id,
+                Finding.status == VerifyStatus.UNVERIFIED,
+                Finding.severity.in_((Severity.CRITICAL, Severity.HIGH)),
+            )
+            .values(severity=Severity.MEDIUM)
+        )
+        await session.commit()
+    return result.rowcount
+
+
 async def run(ctx: TaskContext) -> None:
+    await _verify(ctx)
+    capped = await cap_unverified(ctx.task_id)
+    if capped:
+        await ctx.log(f"{capped} 条疑似漏洞未经动态验证确认，严重等级按中危计")
+
+
+async def _verify(ctx: TaskContext) -> None:
     ctx.check_stop()
     facts, dependencies, findings = await _load(ctx.task_id)
     if not facts.get("is_flask") or not facts.get("entry"):

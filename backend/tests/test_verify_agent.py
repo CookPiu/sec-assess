@@ -11,6 +11,7 @@ from app.core.db import session_factory
 from app.core.runtime import RuntimeConfig
 from app.models import Evidence, Finding, Project, StageLog, Task
 from app.models.enums import Category, Severity, TaskStatus, VerifyStatus
+from app.pipeline.agents import verify as verify_agent
 from app.pipeline.state import TaskContext
 from app.project.flask_facts import collect_flask_facts
 from app.project.pysource import ProjectIndex
@@ -215,3 +216,65 @@ def test_verification_updates_status_and_saves_evidence(
     assert len(sandbox.detached) == 1  # 一次启动，工程进程未退出
     idor_case = next(case for case in probe.cases if case["path"] == "/api/users/2")
     assert idor_case["headers"] == {"Authorization": "Bearer t1"}
+
+
+def test_unverified_findings_capped_at_medium(client, run_async) -> None:
+    """跳过动态验证时，疑似漏洞同样封顶为中危；已验证漏洞与低危不变（FR-010、D-029）。"""
+
+    async def setup() -> tuple[int, int, dict[str, int]]:
+        async with session_factory()() as session:
+            project = Project(name="node-demo", source_type="zip", source_dir="fake")
+            session.add(project)
+            await session.flush()
+            task = Task(project_id=project.id, status=TaskStatus.RUNNING, recon={"facts": {}})
+            session.add(task)
+            await session.flush()
+            specs = {
+                "secret": (Severity.CRITICAL, VerifyStatus.UNVERIFIED),
+                "weak": (Severity.HIGH, VerifyStatus.UNVERIFIED),
+                "low": (Severity.LOW, VerifyStatus.UNVERIFIED),
+                "verified": (Severity.CRITICAL, VerifyStatus.VERIFIED),
+            }
+            rows = {
+                name: Finding(
+                    task_id=task.id,
+                    code=f"CAP-{task.id}-{name}",
+                    category=Category.HARDCODED_SECRET,
+                    title=name,
+                    severity=severity,
+                    cvss_score=9.1,
+                    file="settings.py",
+                    line=1,
+                    status=status,
+                )
+                for name, (severity, status) in specs.items()
+            }
+            session.add_all(rows.values())
+            await session.commit()
+            return project.id, task.id, {name: row.id for name, row in rows.items()}
+
+    project_id, task_id, ids = run_async(setup)
+    ctx = TaskContext(
+        task_id=task_id,
+        project_id=project_id,
+        source_type="zip",
+        source_url=None,
+        source_dir=TARGETS / "user-center",
+        runtime=RuntimeConfig(),
+        sandbox=FakeSandbox(),
+    )
+    run_async(verify_agent.run, ctx)
+
+    async def load():
+        async with session_factory()() as session:
+            rows = (await session.execute(select(Finding).where(Finding.task_id == task_id))).scalars().all()
+            logs = (await session.execute(select(StageLog).where(StageLog.task_id == task_id))).scalars().all()
+        return {row.id: row for row in rows}, [item.message for item in logs]
+
+    rows, messages = run_async(load)
+    assert rows[ids["secret"]].severity == Severity.MEDIUM and rows[ids["secret"]].cvss_score == 9.1
+    assert rows[ids["weak"]].severity == Severity.MEDIUM
+    assert rows[ids["low"]].severity == Severity.LOW
+    assert rows[ids["verified"]].severity == Severity.CRITICAL
+    assert any("跳过动态验证" in message for message in messages)
+    assert any("2 条疑似漏洞" in message for message in messages)

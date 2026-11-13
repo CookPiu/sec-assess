@@ -109,7 +109,8 @@ def test_model_judgements_and_fallbacks(tmp_path: Path) -> None:
             Category.SQL_INJECTION: {
                 "false_positive": False,
                 "category": "sql_injection",
-                "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                # 可利用性指标偏离默认值时由程序改回（D-029）
+                "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:H/I:H/A:H",
                 "reason": "查询参数 q 直接拼进 SQL",
             },
             Category.PATH_TRAVERSAL: {"false_positive": True, "category": "path_traversal",
@@ -125,6 +126,7 @@ def test_model_judgements_and_fallbacks(tmp_path: Path) -> None:
     sql = by_cat[Category.SQL_INJECTION]
     assert (sql.judged_by, sql.score, sql.severity, sql.false_positive) == (JudgedBy.MODEL, 9.8, Severity.CRITICAL, False)
     assert sql.reason == "查询参数 q 直接拼进 SQL"
+    assert sql.vector == "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
     assert by_cat[Category.PATH_TRAVERSAL].false_positive is True
     secret = by_cat[Category.HARDCODED_SECRET]
     assert secret.judged_by == JudgedBy.MODEL and secret.vector == audit.cvss.default_vector(Category.HARDCODED_SECRET)

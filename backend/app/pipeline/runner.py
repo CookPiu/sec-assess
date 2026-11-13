@@ -17,6 +17,7 @@ from app.core.events import bus
 from app.core.runtime import load_runtime
 from app.models import Project, Task
 from app.models.enums import TaskStatus
+from app.pipeline.agents.verify import cap_unverified
 from app.pipeline.graph import build_graph
 from app.pipeline.state import StopRequested, TaskContext
 from app.project.ingest import IngestError
@@ -162,6 +163,9 @@ class PipelineRunner:
             except Exception as exc:
                 logger.warning("任务 %s 收尾时销毁容器失败：%s", ctx.task_id, exc)
         try:
+            if status != TaskStatus.COMPLETED:
+                # 没走完动态验证的任务同样把疑似漏洞封顶为中危
+                await cap_unverified(ctx.task_id)
             if error:
                 await ctx.log(error, "error")
             elif status == TaskStatus.STOPPED:

@@ -39,7 +39,7 @@ SYSTEM_PROMPT = f"""你是代码安全审计员，复核静态分析器给出的
   "cvss_vector": "CVSS:3.1/AV:_/AC:_/PR:_/UI:_/S:_/C:_/I:_/A:_",
   "reason": "中文，150 字以内，说明数据从哪里来、为什么能或不能被利用"}}
 只依据给出的代码判断；代码里有有效的净化、白名单校验、参数化查询或权限检查时判为误报。
-PR 指标按路由的访问前提填写：匿名为 N，普通用户为 L，管理员为 H。"""
+AV、AC、PR、UI 照常填写，程序会按漏洞类别和路由访问前提重新确定；重点按代码实际可造成的影响判断 S、C、I、A。"""
 
 
 @dataclass(frozen=True)
@@ -108,9 +108,13 @@ def build_prompt(index: ProjectIndex, cand: Candidate, functions: dict[str, Func
     return text
 
 
+def access_of(cand: Candidate) -> str | None:
+    return (cand.route or {}).get("access")
+
+
 def default_judgement(cand: Candidate, note: str = NO_MODEL) -> Judgement:
     category = Category(cand.category)
-    vector = cvss.default_vector(category)
+    vector = cvss.anchor_vector(cvss.default_vector(category), category, access_of(cand))
     value, severity = cvss.score(vector)
     return Judgement(category, vector, value, severity, False, JudgedBy.DEFAULT, f"{cand.message}。{note}")
 
@@ -126,11 +130,11 @@ def parse_judgement(reply: dict[str, Any], cand: Candidate) -> Judgement | None:
     reason = str(reply.get("reason") or "").strip()[:MAX_REASON_CHARS] or "模型未给出理由"
     vector = str(reply.get("cvss_vector") or "").strip()
     try:
-        value, severity = cvss.score(vector)
+        vector = cvss.anchor_vector(vector, category, access_of(cand))
     except cvss.CvssError:
-        vector = cvss.default_vector(category)
-        value, severity = cvss.score(vector)
+        vector = cvss.anchor_vector(cvss.default_vector(category), category, access_of(cand))
         reason += "（模型给出的 CVSS 向量无效，改按类别默认向量计分）"
+    value, severity = cvss.score(vector)
     return Judgement(category, vector, value, severity, false_positive, JudgedBy.MODEL, reason)
 
 
