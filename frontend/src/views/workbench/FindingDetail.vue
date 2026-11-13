@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
 
 import { getFinding, getSource, type Evidence, type FindingDetail, type TaintStep } from '@/api/findings'
 import { ApiError } from '@/api/http'
-import CodeViewer, { type LineMark } from '@/components/CodeViewer.vue'
+import type { LineMark } from '@/components/CodeViewer.vue'
 import { formatTime } from '@/utils/format'
 import { ACCESS_LABELS, CATEGORY_LABELS, FINDING_GROUP_META, findingGroup, SEVERITY_META } from '@/utils/labels'
-import { languageOf } from '@/utils/monaco'
+import { languageOf } from '@/utils/language'
+
+// Monaco 体积大，打开漏洞详情时才加载
+const CodeViewer = defineAsyncComponent(() => import('@/components/CodeViewer.vue'))
 
 const MAX_RAW_CHARS = 50_000
 

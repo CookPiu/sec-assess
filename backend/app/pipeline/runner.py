@@ -14,7 +14,7 @@ from sqlalchemy import select, update
 from app.core.config import get_settings
 from app.core.db import session_factory, utcnow
 from app.core.events import bus
-from app.core.runtime import RuntimeConfig, load_runtime
+from app.core.runtime import load_runtime
 from app.models import Project, Task
 from app.models.enums import TaskStatus
 from app.pipeline.graph import build_graph

@@ -36,7 +36,7 @@
 - [x] T024 [P] 容器内探针执行脚本：读取用例 JSON、发往 `127.0.0.1`、返回请求与响应原文、检查 `/tmp` 标记文件（sandbox-images/probe/runner.py）D-014
 - [x] T025 验证用例模板与命中判定：9 类探针、算式与随机名标记、测试账号自动注册（backend/app/verify/）FR-009 FR-010
 - [x] T026 验证 Agent：启动工程副本、逐条执行用例、进程退出后重启、证据落库、未命中降级（backend/app/pipeline/agents/verify.py）FR-009 FR-010
-- [x] T027 流水线编排：LangGraph 五阶段（exploit_chain、report_gen 先占位直通）、阶段起止落库与推送、停止与超时、排队与并发上限、后端启动时清理遗留容器与任务（backend/app/pipeline/state.py、backend/app/pipeline/graph.py、backend/app/pipeline/runner.py）FR-004 FR-005 D-004 D-019
+- [x] T027 流水线编排：LangGraph 五阶段（exploit_chain、report_gen 先占位直通，已分别由 T036、T041 替换）、阶段起止落库与推送、停止与超时、排队与并发上限、后端启动时清理遗留容器与任务（backend/app/pipeline/state.py、backend/app/pipeline/graph.py、backend/app/pipeline/runner.py）FR-004 FR-005 D-004 D-019
 - [x] T028 任务接口：新建（含 Docker 可用性预检）、停止、查询，研发人员无权新建与停止（backend/app/api/tasks.py）FR-004 FR-005
 - [x] T029 [P] 概览大盘：项目列表、全局统计图、新建评估弹窗（Git 地址 / zip 上传）（frontend/src/views/DashboardView.vue、frontend/src/views/dashboard/NewTaskDialog.vue）FR-016
 - [x] T030 [P] 工作台监控区：阶段步进器、日志滚动窗、资源曲线、停止按钮，用 fetch 读取 SSE（frontend/src/views/workbench/MonitorPanel.vue、frontend/src/api/sse.ts）FR-014 FR-017 SC-005
@@ -56,11 +56,11 @@
 
 ## US4 导出评估报告（P1）
 
-- [ ] T038 [P] 安全评分与综合等级计算（backend/app/report/scoring.py、backend/tests/test_scoring.py）FR-015
-- [ ] T039 报告模板与渲染：Jinja2 生成 Markdown 与 HTML，覆盖需求说明 2.5.8 全部章节与图表（backend/app/report/templates/、backend/app/report/render.py）FR-015
-- [ ] T040 [P] PDF 导出：Playwright Chromium 打印 HTML（backend/app/report/pdf.py）FR-015 D-007
-- [ ] T041 报告 Agent 与报告接口：替换占位节点，汇编报告、预览与三种格式下载、导出写审计日志（backend/app/pipeline/agents/report.py、backend/app/api/reports.py）FR-015 FR-020
-- [ ] T042 报告中心页：在线预览、一键导出三种格式（frontend/src/views/ReportCenter.vue）FR-015 SC-008
+- [x] T038 [P] 安全评分与综合等级计算（backend/app/report/scoring.py、backend/tests/test_scoring.py）FR-015
+- [x] T039 报告模板与渲染：Jinja2 生成 Markdown 与 HTML，覆盖需求说明 2.5.8 全部章节与图表（backend/app/report/templates/、backend/app/report/render.py）FR-015
+- [x] T040 [P] PDF 导出：Playwright Chromium 打印 HTML（backend/app/report/pdf.py）FR-015 D-007
+- [x] T041 报告 Agent 与报告接口：替换占位节点，汇编报告、预览与三种格式下载、导出写审计日志（backend/app/pipeline/agents/report.py、backend/app/api/reports.py）FR-015 FR-020
+- [x] T042 报告中心页：在线预览、一键导出三种格式（frontend/src/views/ReportCenterView.vue）FR-015 SC-008
 
 ## US5 查看与采纳修复补丁（P2）
 

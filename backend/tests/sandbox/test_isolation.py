@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from app.sandbox.manager import Quota, SandboxManager, volume_name
+from app.sandbox.manager import LABEL, LABEL_INSTANCE, Quota, SandboxManager, volume_name
 from app.sandbox.stats import StatsSampler
 
 pytestmark = pytest.mark.docker
@@ -19,7 +19,8 @@ IMAGE = os.environ.get("SANDBOX_IMAGE", "sec-assess/sandbox-python:3.12")
 
 
 @pytest.fixture(scope="module")
-def manager() -> SandboxManager:
+def manager(app_env) -> SandboxManager:
+    # app_env 让本模块使用测试数据目录对应的实例标识，遗留清理不会碰到开发后端的容器
     m = SandboxManager()
     if not m.ping():
         pytest.skip("Docker 未启动")
@@ -104,3 +105,21 @@ def test_destroy_removes_container_and_volume_quickly(manager: SandboxManager, s
     assert time.monotonic() - start < 5
     assert not manager.exists(sandbox)
     assert not manager.client.volumes.list(filters={"name": volume_name(sandbox)})
+
+
+def test_cleanup_leftovers_spares_other_instances(manager: SandboxManager, sandbox: int) -> None:
+    """启动清理只删本实例的遗留容器，另一个后端实例（如开发后端）正在用的容器保留。"""
+    other = manager.client.containers.run(
+        IMAGE,
+        command=["sleep", "infinity"],
+        detach=True,
+        labels={LABEL: "1", LABEL_INSTANCE: "other000"},
+        network_mode="none",
+    )
+    try:
+        assert manager.cleanup_leftovers() >= 1
+        assert not manager.exists(sandbox)
+        other.reload()
+        assert other.status == "running"
+    finally:
+        other.remove(force=True)

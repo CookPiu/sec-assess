@@ -94,4 +94,17 @@ function logout(): void {
 .main {
   padding: 0;
 }
+
+/* 手机宽度下收起系统名和用户名，菜单折叠成省略号，保证顶栏不横向溢出 */
+@media (max-width: 767px) {
+  .header {
+    gap: 12px;
+    padding: 0 12px;
+  }
+
+  .brand,
+  .user-name {
+    display: none;
+  }
+}
 </style>

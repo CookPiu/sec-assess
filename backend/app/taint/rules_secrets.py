@@ -8,7 +8,7 @@ from typing import Any
 
 from app.models.enums import Category
 from app.project.flask_facts import access_rank
-from app.project.pysource import ModuleInfo, ProjectIndex, call_name, const_str, dotted, is_true, keyword
+from app.project.pysource import ModuleInfo, ProjectIndex, call_name, const_str, dotted, is_true
 from app.taint.model import Candidate, Step
 
 SECRET_NAME = re.compile(r"secret|passw(?:or)?d|token|api_?key|private_?key|signing_?key", re.IGNORECASE)

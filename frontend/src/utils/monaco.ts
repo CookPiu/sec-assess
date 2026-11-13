@@ -5,8 +5,4 @@ import EditorWorker from 'monaco-editor/editor/editor.worker?worker'
 
 self.MonacoEnvironment = { getWorker: () => new EditorWorker() }
 
-export function languageOf(path: string): string {
-  return path.toLowerCase().endsWith('.py') ? 'python' : 'plaintext'
-}
-
 export { monaco }

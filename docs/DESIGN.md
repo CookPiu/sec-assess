@@ -21,11 +21,11 @@
 | 鉴权 | JWT + bcrypt 密码哈希 | 三类角色，权限划分见 SPEC.md“假设” |
 | 存储 | SQLite | 单机演示，存任务、阶段、漏洞、证据、补丁、审计日志 |
 | 实时推送 | SSE | 阶段变化、日志行、资源指标三类事件 |
-| 报告导出 | Jinja2 渲染 Markdown / HTML，Playwright Chromium 打印 PDF | Windows 上比 WeasyPrint 少装 GTK 依赖 |
+| 报告导出 | Jinja2 渲染 Markdown，markdown-it-py 转 HTML，Playwright 驱动 Chromium 内核浏览器打印 PDF | 三种格式出自同一份 Markdown；Windows 上比 WeasyPrint 少装 GTK 依赖 |
 | 前端 | Vue 3 + Vite + TypeScript + Element Plus + Pinia，pnpm 管理依赖 | 与提单助手统一 |
 | 前端可视化 | Monaco Editor（代码高亮与 Diff）、AntV G6（攻击路径 DAG，dagre 布局）、ECharts（统计图） | |
 
-新增依赖说明：相对兄弟项目，本项目新增 `docker`（管理沙箱）、`bcrypt`（密码哈希）、`openai`（调用 DeepSeek 的 OpenAI 兼容接口）、`playwright`（只用于 PDF 导出，首次使用需执行 `playwright install chromium`）、`pip`（uv 建的虚拟环境不带 pip，依赖准备要在宿主机执行 `pip download`）。
+新增依赖说明：相对兄弟项目，本项目新增 `docker`（管理沙箱）、`bcrypt`（密码哈希）、`openai`（调用 DeepSeek 的 OpenAI 兼容接口）、`playwright`（只用于 PDF 导出；没有执行 `playwright install chromium` 时改用本机的 Edge 或 Chrome）、`jinja2` 与 `markdown-it-py`（报告渲染）、`pip`（uv 建的虚拟环境不带 pip，依赖准备要在宿主机执行 `pip download`）。
 
 ## 3. 目录结构
 
@@ -65,7 +65,7 @@ sec-assess/
 - 停止任务时后端直接 `docker kill` 并删除容器和任务卷，已写入数据库的阶段结果保留，任务状态置为 `stopped`；流水线中后续的容器调用失败后按已停止收尾。
 - 资源指标通过 Docker stats 接口每 2 秒采样一次，经 SSE 推到前端。
 - 隔离自检（SC-007）：集成测试在容器内尝试访问外部地址、写 `/src`、以 root 身份执行，三者都必须失败。网络隔离策略固定为 `none`，配置页只展示；并发任务数默认 1，超出的任务保持 `created` 排队（D-019）。
-- 后端启动时清理带本系统标签的遗留容器和卷，并把遗留的 `running` 任务置为 `failed`。
+- 容器与任务卷的名称和标签带后端实例标识（由数据目录得出），开发后端和测试同时使用 Docker 时任务编号相同也不会冲突。后端启动时只清理本实例留下的遗留容器和卷，并把遗留的 `running` 任务置为 `failed`。
 
 ## 5. 流水线
 
@@ -156,7 +156,12 @@ Python 工程在本阶段末尾完成依赖准备（第 4 节），准备结果�
 - 大模型针对漏洞所在函数输出修复后的完整函数，由程序用 `difflib` 生成 unified diff，保证格式规范、行号可对。模型不可用时跳过补丁生成。
 - 补丁状态只有未采纳和已采纳，研发人员标记采纳时写审计日志；不做补丁回归和审核流（D-017）。
 - 安全评分为 100 减去扣分，最低 0 分。每条 Verified 漏洞按严重等级扣分：严重 25、高危 15、中危 8、低危 3；Unverified 隐患按一半扣分；“模型判定误报”不扣分。综合等级按 SPEC.md“假设”中的规则判定。
-- 报告按需求 2.5.8 的章节用 Jinja2 模板渲染，导出 Markdown、HTML、PDF。
+- 整改优先级：P1 为 CVSS ≥ 9.0 或位于执行代码路径上的已验证漏洞，P2 为其余 CVSS ≥ 7.0 的已验证漏洞，P3 为其余已验证漏洞，P4 为疑似漏洞；同级按 CVSS 从高到低排列。
+- 报告阶段由规则算出评分、等级和优先级，大模型只拿到漏洞清单（编号、类型、标题、位置、等级、验证状态）和路径节点，写评估结论与逐条整改行动，落在 `report` 表；模型不可用或输出不合法时，结论按统计数据生成，整改行动用漏洞类别的默认指引。
+- 报告按需求 2.5.8 的五章用 Jinja2 渲染成 Markdown，再用 markdown-it-py 转成 HTML，PDF 打印该 HTML，三种格式内容一致（D-025）。评分、等级与各章节数据在预览或导出时从各表现取，只有模型写的文字来自 `report` 表；报告中的时间注明 UTC 偏移。
+- 风险大盘的 CVSS 分布矩阵按 CVSS 区间与验证状态计数；漏洞类型占比饼图由服务端生成 SVG，以 data URI 图片嵌入 Markdown，配一张列出全部类型的表格，超过 8 类时尾部合并为“其他”。
+- 转换 HTML 时禁用原始 HTML，只放行模板生成的 SVG 图片链接；被评估工程的代码片段、请求与响应报文只以转义后的文本出现。报告中心用不授予脚本与同源权限的 iframe 预览；打印 PDF 时禁用页面脚本并拦截全部网络请求。
+- 报告只对已完成的评估提供；所有登录用户可预览，安全工程师与研发人员可导出，每次导出写审计日志。
 
 ## 6. 数据模型
 
@@ -171,6 +176,7 @@ Python 工程在本阶段末尾完成依赖准备（第 4 节），准备结果�
 | `chain_node` / `chain_edge` | 攻击路径图的节点（起点、漏洞、身份能力、终点）与有向边，边上记录所用的能力或推导规则 |
 | `attack_path` | 从起点到终点的多步路径：节点序列、攻陷目标、阶段说明、业务危害 |
 | `patch` | 漏洞、diff 文本、采纳状态、采纳人、采纳时间 |
+| `report` | 任务、模型写的评估结论与逐条整改行动、文字来源（模型 / 模板） |
 | `user`、`audit_log`、`setting` | 三类角色、操作审计、沙箱与模型参数 |
 
 ## 7. 前端

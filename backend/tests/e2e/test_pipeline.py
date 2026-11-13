@@ -128,6 +128,15 @@ def test_shop_admin_assessment(client: TestClient, login, run_async, real_sandbo
     ), shapes
     assert all(path["summary"] and path["impact"] for path in chain["paths"])
 
+    # SC-008 / US4：报告包含需求 2.5.8 的五章，三种格式都能导出
+    report = client.get(f"/api/tasks/{task_id}/report", headers=headers).json()
+    assert report["level"] == "极高危"
+    markdown = client.get(f"/api/tasks/{task_id}/report/export", params={"format": "md"}, headers=headers).text
+    for title in ("项目概况与执行信息", "安全评分与风险大盘", "已验证漏洞清单", "多步攻击路径推演", "安全整改建议"):
+        assert f"、{title}" in markdown and title in report["html"]
+    pdf = client.get(f"/api/tasks/{task_id}/report/export", params={"format": "pdf"}, headers=headers)
+    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+
 
 def test_user_center_assessment(client: TestClient, login, run_async, real_sandbox) -> None:
     """U1–U3：越权与缺失鉴权命中；硬编码 JWT 密钥保持疑似；诱饵接口不产生检出。"""

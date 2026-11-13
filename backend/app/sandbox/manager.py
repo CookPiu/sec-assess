@@ -5,6 +5,7 @@ docker SDK 是同步接口，异步代码里通过 asyncio.to_thread 调用。
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,10 +14,13 @@ import docker
 from docker.errors import APIError, DockerException, ImageNotFound, NotFound
 from docker.models.containers import Container
 
+from app.core.config import get_settings
+
 logger = logging.getLogger(__name__)
 
 LABEL = "sec-assess"
 LABEL_TASK = "sec-assess.task"
+LABEL_INSTANCE = "sec-assess.instance"
 SANDBOX_USER = "10001:10001"
 TIMEOUT_EXIT_CODE = 124  # coreutils timeout 超时退出码
 
@@ -47,12 +51,19 @@ class ExecResult:
         return self.exit_code == TIMEOUT_EXIT_CODE
 
 
+def instance_id() -> str:
+    """后端实例标识，由数据目录得出。开发后端与测试各用各的数据目录，任务编号相同也不会共用容器，
+    启动时的遗留清理也只删本实例的容器。"""
+    path = str(get_settings().resolved_data_dir.resolve()).lower()
+    return hashlib.sha1(path.encode("utf-8")).hexdigest()[:8]
+
+
 def container_name(task_id: int) -> str:
-    return f"sec-assess-task-{task_id}"
+    return f"sec-assess-{instance_id()}-task-{task_id}"
 
 
 def volume_name(task_id: int) -> str:
-    return f"sec-assess-work-{task_id}"
+    return f"sec-assess-{instance_id()}-work-{task_id}"
 
 
 def _decode(data: bytes | None) -> str:
@@ -102,7 +113,7 @@ class SandboxManager:
             raise SandboxError(f"沙箱镜像不存在：{image}，请先运行 sandbox-images/build.ps1")
         self.destroy(task_id)
 
-        labels = {LABEL: "1", LABEL_TASK: str(task_id)}
+        labels = {LABEL: "1", LABEL_TASK: str(task_id), LABEL_INSTANCE: instance_id()}
         work_volume = volume_name(task_id)
         self.client.volumes.create(name=work_volume, labels=labels)
 
@@ -216,15 +227,20 @@ class SandboxManager:
             logger.warning("删除任务 %s 的工作卷失败：%s", task_id, exc)
 
     def cleanup_leftovers(self) -> int:
-        """删除所有带本系统标签的容器和卷，返回删除的容器数。后端启动时调用。"""
+        """删除本实例留下的带本系统标签的容器和卷（含加实例标签之前创建的），返回删除的容器数。后端启动时调用。"""
+        mine = {None, instance_id()}
         removed = 0
         for container in self.client.containers.list(all=True, filters={"label": LABEL}):
+            if container.labels.get(LABEL_INSTANCE) not in mine:
+                continue
             try:
                 container.remove(force=True)
                 removed += 1
             except APIError as exc:
                 logger.warning("清理遗留容器 %s 失败：%s", container.name, exc)
         for volume in self.client.volumes.list(filters={"label": LABEL}):
+            if (volume.attrs.get("Labels") or {}).get(LABEL_INSTANCE) not in mine:
+                continue
             try:
                 volume.remove(force=True)
             except APIError as exc:

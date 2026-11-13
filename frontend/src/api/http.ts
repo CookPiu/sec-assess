@@ -77,3 +77,56 @@ export async function request<T>(
   }
   return data as T
 }
+
+function filenameOf(header: string | null): string | null {
+  if (!header) return null
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header)
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded[1])
+    } catch {
+      // 编码不合法时退回普通文件名
+    }
+  }
+  const plain = /filename="([^"]+)"/i.exec(header)
+  return plain ? plain[1] : null
+}
+
+/** 携带登录令牌下载文件，按响应头 Content-Disposition 里的文件名保存；失败时抛出 ApiError */
+export async function download(
+  path: string,
+  query: Record<string, string> = {},
+  fallbackName = 'download',
+): Promise<void> {
+  const url = new URL(path, window.location.origin)
+  for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value)
+  const headers: Record<string, string> = {}
+  const token = getToken()
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  let resp: Response
+  try {
+    resp = await fetch(url, { headers })
+  } catch {
+    throw new ApiError(0, '无法连接后端服务，请确认后端已启动')
+  }
+  if (!resp.ok) {
+    let data: unknown = undefined
+    try {
+      data = await resp.json()
+    } catch {
+      data = undefined
+    }
+    if (resp.status === 401 && token && onUnauthorized) onUnauthorized()
+    throw new ApiError(resp.status, detailOf(data, `请求失败（${resp.status}）`))
+  }
+
+  const href = URL.createObjectURL(await resp.blob())
+  const link = document.createElement('a')
+  link.href = href
+  link.download = filenameOf(resp.headers.get('Content-Disposition')) ?? fallbackName
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(href), 1000)
+}

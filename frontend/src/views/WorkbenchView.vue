@@ -1,19 +1,22 @@
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, defineAsyncComponent, onBeforeUnmount, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import { ApiError } from '@/api/http'
 import { stopTask, type TaskOut } from '@/api/tasks'
 import { useAuthStore } from '@/stores/auth'
 import { formatDuration, formatTime } from '@/utils/format'
 import { STATUS_META } from '@/utils/labels'
-import AttackGraph from '@/views/workbench/AttackGraph.vue'
 import FindingDetail from '@/views/workbench/FindingDetail.vue'
 import FindingList from '@/views/workbench/FindingList.vue'
 import MonitorPanel from '@/views/workbench/MonitorPanel.vue'
 
+// G6 体积大，单独分包，页面框架先渲染
+const AttackGraph = defineAsyncComponent(() => import('@/views/workbench/AttackGraph.vue'))
+
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 const task = ref<TaskOut | null>(null)
 const stopping = ref(false)
@@ -85,10 +88,19 @@ async function stop(): Promise<void> {
           </template>
         </div>
       </div>
-      <el-button v-if="canStop" type="danger" plain :loading="stopping" @click="stop">
-        <el-icon><VideoPause /></el-icon>
-        <span>停止评估</span>
-      </el-button>
+      <div class="header-actions">
+        <el-button
+          v-if="task?.status === 'completed'"
+          @click="router.push({ name: 'reports', query: { task: String(taskId) } })"
+        >
+          <el-icon><Document /></el-icon>
+          <span>查看报告</span>
+        </el-button>
+        <el-button v-if="canStop" type="danger" plain :loading="stopping" @click="stop">
+          <el-icon><VideoPause /></el-icon>
+          <span>停止评估</span>
+        </el-button>
+      </div>
     </div>
 
     <MonitorPanel v-model:task="task" :task-id="taskId" />
@@ -133,6 +145,12 @@ async function stop(): Promise<void> {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .meta {

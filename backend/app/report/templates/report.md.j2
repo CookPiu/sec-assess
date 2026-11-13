@@ -1,0 +1,176 @@
+# {{ title | md }}
+
+任务编号 #{{ task.id }} · 报告生成时间 {{ generated_at }}
+
+## 一、项目概况与执行信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 项目名称 | {{ project.name | md }} |
+| 工程来源 | {{ project.source | md }} |
+| 技术栈 | {{ project.stack | md }} |
+| 运行环境 | {{ project.runtime | md }} |
+| 扫描代码行数 | {{ project.loc | md }} |
+| 依赖清单 | {{ project.manifests | md }} |
+| 依赖准备 | {{ project.deps | md }} |
+| 评估开始 | {{ task.started }} |
+| 评估结束 | {{ task.finished }} |
+| 总用时 | {{ task.duration }} |
+
+### 多 Agent 执行摘要
+
+| 阶段（执行者） | 用时 | 结果 |
+| --- | --- | --- |
+{% for s in stages %}
+| {{ s.label }} | {{ s.duration }} | {{ s.result | md }} |
+{% endfor %}
+{% if coverage %}
+
+### 评估范围说明
+
+{% for note in coverage %}
+- {{ note | md }}
+{% endfor %}
+{% endif %}
+
+## 二、安全评分与风险大盘
+
+综合安全等级：**{{ level }}**，安全评分：**{{ score }}** / 100
+
+判定依据：{{ level_reason | md }}。
+
+{{ conclusion | block }}
+
+评分规则：100 分减去扣分，最低 0 分；已验证漏洞按严重等级扣分（严重 25、高危 15、中危 8、低危 3），疑似漏洞扣一半，模型判定误报不扣分。
+
+| 已验证漏洞 | 疑似漏洞 | 模型判定误报（不计入） |
+| --- | --- | --- |
+| {{ stats.verified }} | {{ stats.unverified }} | {{ stats.false_positive }} |
+
+### CVSS 分布矩阵
+
+| 严重等级（CVSS 区间） | 已验证 | 疑似 | 合计 |
+| --- | --- | --- | --- |
+{% for row in matrix %}
+| {{ row.label }} | {{ row.verified }} | {{ row.unverified }} | {{ row.total }} |
+{% endfor %}
+
+### 漏洞类型占比
+
+{% if type_rows %}
+![漏洞类型占比饼图]({{ type_chart }})
+
+| 漏洞类型 | 数量 | 占比 |
+| --- | --- | --- |
+{% for row in type_rows %}
+| {{ row.label | md }} | {{ row.count }} | {{ row.share }} |
+{% endfor %}
+{% else %}
+本次评估没有发现漏洞。
+{% endif %}
+
+## 三、已验证漏洞清单
+
+{% for f in verified %}
+### {{ loop.index }}. {{ f.code }} {{ f.title | md }}
+
+| 字段 | 内容 |
+| --- | --- |
+| 漏洞编号 | {{ f.code }} |
+| 漏洞类型 | {{ f.category | md }} |
+| 严重等级与 CVSS | {{ f.severity }} · {{ f.cvss }} |
+| CVSS 向量 | {{ f.vector | code }} |
+| 触发位置 | {{ f.location | code }} |
+| 入口路由 | {{ f.route | md }} |
+| 研判理由 | {{ f.reason | md }} |
+
+**污点输入与流动路径**
+
+{% for s in f.steps %}
+{{ loop.index }}. {{ s.location | code }} {{ s.note | md }}：{{ s.snippet | code }}
+{% else %}
+该漏洞由规则直接匹配，没有污点传播轨迹。
+{% endfor %}
+
+**动态 PoC 验证**
+
+{% if f.evidence %}
+命中特征：{{ f.evidence.matched | md }}
+
+请求报文：
+
+{{ f.evidence.request | fence("http") }}
+
+响应报文{{ f.evidence.response_note }}：
+
+{{ f.evidence.response | fence("http") }}
+{% else %}
+没有保存命中的验证报文。
+{% endif %}
+
+**修复补丁**
+
+{% if f.patch %}
+{{ f.patch | fence("diff") }}
+{% else %}
+暂无修复补丁。
+{% endif %}
+
+{% else %}
+本次评估没有已验证漏洞。
+
+{% endfor %}
+{% if unverified %}
+### 疑似漏洞（未经动态验证）
+
+| 编号 | 类型 | 严重等级 | CVSS | 位置 | 研判理由 |
+| --- | --- | --- | --- | --- | --- |
+{% for f in unverified %}
+| {{ f.code }} | {{ f.category | md }} | {{ f.severity }} | {{ f.cvss }} | {{ f.location | code }} | {{ f.reason | md }} |
+{% endfor %}
+
+{% endif %}
+## 四、多步攻击路径推演
+
+{% if paths %}
+共推演出 {{ paths | length }} 条多步攻击路径，其中 {{ rce_paths }} 条可到达执行代码。
+
+{% for p in paths %}
+### 路径 {{ loop.index }}：{{ p.title | md }}
+
+攻陷目标：{{ p.target | md }}；涉及漏洞：{{ p.codes | md }}
+
+| 阶段 | 节点 | 进入依据 |
+| --- | --- | --- |
+{% for s in p.steps %}
+| {{ loop.index }} | {{ s.label | md }} | {{ s.via | md }} |
+{% endfor %}
+
+阶段说明：{{ p.summary | md }}
+
+潜在业务危害：{{ p.impact | md }}
+
+文字来源：{{ p.written_by }}
+
+{% endfor %}
+{% else %}
+{{ paths_note | md }}
+
+{% endif %}
+## 五、安全整改建议
+
+{% if remediation %}
+按修复优先级排序：P1 为 CVSS ≥ 9.0 或位于执行代码路径上的已验证漏洞，P2 为其余 CVSS ≥ 7.0 的已验证漏洞，P3 为其余已验证漏洞，P4 为疑似漏洞。
+
+{% for group in remediation %}
+### {{ group.label }}
+
+{% for item in group.entries %}
+{{ item.index }}. **{{ item.code }} {{ item.title | md }}**（{{ item.location | code }}，{{ item.meta | md }}）
+   {{ item.action | md }}
+{% endfor %}
+
+{% endfor %}
+{% else %}
+本次评估没有需要整改的漏洞。
+{% endif %}
