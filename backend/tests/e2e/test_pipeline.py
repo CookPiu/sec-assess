@@ -115,6 +115,19 @@ def test_shop_admin_assessment(client: TestClient, login, run_async, real_sandbo
     assert any("验证通过" in message for message in messages)
     assert any("动态验证完成" in message for message in messages)
 
+    # SC-004 / US3 验收 1：匿名 SQL 注入 → 取得管理员身份 → 后台功能执行代码，三步及以上
+    chain = client.get(f"/api/tasks/{task_id}/chain", headers=headers).json()
+    nodes = {node["id"]: node for node in chain["nodes"]}
+    shapes = [[(nodes[i]["kind"], nodes[i]["label"]) for i in path["node_ids"]] for path in chain["paths"]]
+    assert any(
+        [kind for kind, _ in shape] == ["start", "finding", "capability", "finding", "goal"]
+        and "SQL 注入" in shape[1][1]
+        and shape[2][1] == "管理员身份"
+        and shape[4][1] == "执行代码"
+        for shape in shapes
+    ), shapes
+    assert all(path["summary"] and path["impact"] for path in chain["paths"])
+
 
 def test_user_center_assessment(client: TestClient, login, run_async, real_sandbox) -> None:
     """U1–U3：越权与缺失鉴权命中；硬编码 JWT 密钥保持疑似；诱饵接口不产生检出。"""
@@ -134,6 +147,15 @@ def test_user_center_assessment(client: TestClient, login, run_async, real_sandb
     assert by_category[Category.HARDCODED_SECRET].status == VerifyStatus.UNVERIFIED
 
     assert_evidence_matches_verdicts(findings, evidence)
+
+    # 越权与缺失鉴权各自一步到达“读他人数据”，不构成多步路径
+    chain = client.get(f"/api/tasks/{task_id}/chain", headers=headers).json()
+    assert {node["label"] for node in chain["nodes"] if node["kind"] != "finding"} == {
+        "匿名攻击者",
+        "普通用户身份",
+        "读他人数据",
+    }
+    assert chain["paths"] == []
 
 
 def test_stop_keeps_findings_and_removes_container(

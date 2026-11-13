@@ -50,9 +50,9 @@
 
 ## US3 查看多步攻击路径（P1）
 
-- [ ] T035 攻击路径组装：能力登记、推导规则、DAG 生成、多步路径筛选，含以靶场侦察事实为输入的单元测试（backend/app/chain/、backend/tests/test_chain.py）FR-011 D-008 SC-004
-- [ ] T036 推演 Agent：替换占位节点，调用组装并由大模型写阶段说明与业务危害（backend/app/pipeline/agents/chain.py）FR-011
-- [ ] T037 [P] 拓扑图：G6 dagre 布局、边上显示能力说明、点击节点打开漏洞详情侧栏（frontend/src/views/workbench/AttackGraph.vue）FR-017
+- [x] T035 攻击路径组装：能力登记、推导规则、DAG 生成、多步路径筛选，含以靶场侦察事实为输入的单元测试（backend/app/chain/、backend/tests/test_chain.py）FR-011 D-008 SC-004
+- [x] T036 推演 Agent：替换占位节点，调用组装并由大模型写阶段说明与业务危害；攻击路径查询接口（backend/app/pipeline/agents/chain.py、backend/app/api/chain.py）FR-011
+- [x] T037 [P] 拓扑图：G6 dagre 布局、边上显示能力说明、点击节点打开漏洞详情侧栏（frontend/src/views/workbench/AttackGraph.vue）FR-017
 
 ## US4 导出评估报告（P1）
 

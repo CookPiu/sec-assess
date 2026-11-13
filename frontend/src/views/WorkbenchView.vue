@@ -8,6 +8,7 @@ import { stopTask, type TaskOut } from '@/api/tasks'
 import { useAuthStore } from '@/stores/auth'
 import { formatDuration, formatTime } from '@/utils/format'
 import { STATUS_META } from '@/utils/labels'
+import AttackGraph from '@/views/workbench/AttackGraph.vue'
 import FindingDetail from '@/views/workbench/FindingDetail.vue'
 import FindingList from '@/views/workbench/FindingList.vue'
 import MonitorPanel from '@/views/workbench/MonitorPanel.vue'
@@ -19,6 +20,14 @@ const stopping = ref(false)
 const selectedFinding = ref<number | null>(null)
 // 阶段或任务状态变化时漏洞数据可能已更新，用于通知详情面板重新拉取
 const revision = computed(() => `${task.value?.status}:${task.value?.current_stage}`)
+// 拓扑图上点击漏洞节点时在侧栏打开的漏洞
+const drawerFinding = ref<number | null>(null)
+const drawerOpen = computed({
+  get: () => drawerFinding.value !== null,
+  set: (open: boolean) => {
+    if (!open) drawerFinding.value = null
+  },
+})
 
 const taskId = computed(() => Number(route.params.taskId))
 const canStop = computed(
@@ -98,6 +107,15 @@ async function stop(): Promise<void> {
         </el-card>
       </el-col>
     </el-row>
+
+    <el-card shadow="never" class="block">
+      <template #header>攻击路径</template>
+      <AttackGraph :task-id="taskId" :task="task" @open-finding="drawerFinding = $event" />
+    </el-card>
+
+    <el-drawer v-model="drawerOpen" title="漏洞详情" size="min(960px, 92vw)" destroy-on-close>
+      <FindingDetail :task-id="taskId" :finding-id="drawerFinding" :revision="revision" />
+    </el-drawer>
   </div>
 </template>
 
