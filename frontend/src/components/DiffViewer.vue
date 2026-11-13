@@ -31,9 +31,9 @@ onMounted(() => {
     domReadOnly: true,
     automaticLayout: true,
     renderSideBySide: true,
-    // 宽度不够时改为上下对照
+    // 宽度不够时改为上下对照；工作台详情区在 1440 宽屏幕上约 700px，仍保持左右对照
     useInlineViewWhenSpaceIsLimited: true,
-    renderSideBySideInlineBreakpoint: 760,
+    renderSideBySideInlineBreakpoint: 640,
     // 折叠未改动的大段代码，只展开修改处及上下文
     hideUnchangedRegions: { enabled: true, contextLineCount: 3, minimumLineCount: 6, revealLineCount: 10 },
     // 左右各占一半宽度，长行折行显示
