@@ -19,8 +19,8 @@
 - [x] T010 资源采样：Docker stats 每 2 秒一次，输出 CPU、内存、进程数（backend/app/sandbox/stats.py）FR-014
 - [x] T011 事件总线与 SSE 接口：阶段、日志、资源三类事件，按任务订阅（backend/app/core/events.py、backend/app/api/events.py）FR-014 D-006
 - [x] T012 [P] 大模型客户端：DeepSeek OpenAI 兼容接口、超时、总开关、只接收代码片段（backend/app/core/llm.py）D-011
-- [ ] T013 [P] 电商靶场 shop-admin：S1–S9、诱饵写法、种子数据（含无盐 MD5 管理员密码）（targets/shop-admin/）FR-021
-- [ ] T014 [P] 用户中心靶场 user-center：U1–U3、诱饵写法、注册与登录接口、一个预装镜像外的依赖（targets/user-center/）FR-021 SC-010
+- [x] T013 [P] 电商靶场 shop-admin：S1–S9、诱饵写法、种子数据（含无盐 MD5 管理员密码）（targets/shop-admin/）FR-021
+- [x] T014 [P] 用户中心靶场 user-center：U1–U3、诱饵写法、注册与登录接口、一个预装镜像外的依赖（targets/user-center/）FR-021 SC-010
 - [x] T015 [P] 前端登录页、按角色显示菜单、路由守卫（frontend/src/views/LoginView.vue、frontend/src/router/）FR-019
 
 ## US1 新建评估并自动跑完流水线（P1）
@@ -29,7 +29,7 @@
 - [x] T017 [P] 侦察：解析 requirements.txt、pyproject.toml、package.json、pom.xml，统计代码行数（backend/app/project/stack.py）FR-002
 - [x] T018 侦察：Flask 路由表与侦察事实（启动方式与端口、路由访问前提、注册登录字段、密码存储方式、会话方式）（backend/app/project/flask_facts.py）FR-002
 - [x] T019 依赖准备：宿主机 `pip download --only-binary=:all:`、wheel 缓存、容器内离线安装、回退预装版本、结果写日志（backend/app/sandbox/deps.py）FR-022 D-012
-- [x] T020 [P] 污点引擎：跨文件函数级调用图、Source / Sink / Sanitizer 规则表、赋值与拼接及参数返回值传播、3 层限制、逐步轨迹，以两个靶场为测试集（backend/app/taint/、backend/tests/taint/）FR-006 D-003 D-018；靶场未就绪前测试集为内联用例（D-021）
+- [x] T020 [P] 污点引擎：跨文件函数级调用图、Source / Sink / Sanitizer 规则表、赋值与拼接及参数返回值传播、3 层限制、逐步轨迹，以两个靶场为测试集（backend/app/taint/、backend/tests/taint/）FR-006 D-003 D-018；另有每类漏洞与诱饵的内联用例（D-021）
 - [x] T021 越权规则与敏感信息规则（硬编码密钥、调试模式、配置暴露、弱密码存储）（backend/app/taint/rules_authz.py、backend/app/taint/rules_secrets.py）FR-007
 - [x] T022 [P] CVSS 3.1 基础分计算与各漏洞类别的默认向量（backend/app/core/cvss.py、backend/tests/test_cvss.py）FR-008 D-015
 - [x] T023 审计 Agent：大模型研判（4 路并发）、模型判定误报分组、模型不可用时回退默认向量（backend/app/pipeline/agents/audit.py）FR-008

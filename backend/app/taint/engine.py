@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import ast
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -20,6 +21,8 @@ from app.taint.model import Candidate, Step, Taint
 from app.taint.rules import MESSAGES, SAFE_YAML_LOADERS, SANITIZERS, SINKS, Sink, source_label
 
 MAX_DEPTH = 3
+# int、float、uuid 转换器只放行对应类型的值，这类 URL 参数不作为污点
+_TYPED_PARAM = re.compile(r"<(?:int|float|uuid):([a-zA-Z_][a-zA-Z0-9_]*)>")
 ALL = frozenset(SANITIZERS["int"])
 Env = dict[str, Taint]
 
@@ -45,8 +48,9 @@ class TaintEngine:
                 continue
             route_handlers.add((fn.module, fn.name))
             env: Env = {}
+            typed = set(_TYPED_PARAM.findall(route["path"]))
             for param in route["params"]:
-                if param in fn.params:
+                if param in fn.params and param not in typed:
                     step = Step(fn.file, fn.node.lineno, self.index.snippet(fn.file, fn.node.lineno), f"URL 参数 <{param}>")
                     env[param] = Taint((step,))
             info = {"path": route["path"], "methods": route["methods"], "access": route["access"]}

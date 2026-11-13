@@ -1,6 +1,6 @@
 """鉴权类规则（FR-007、DESIGN.md 5.2 第 2 条）。
 
-- 越权（IDOR）：路由带资源 ID 参数，处理函数用它查询数据，却没有按当前用户过滤或比对。
+- 越权（IDOR）：需要登录的路由带资源 ID 参数，处理函数用它查询数据，却没有按当前用户过滤或比对。
 - 缺失鉴权：匿名可访问的路由查询并返回用户类数据，且不是注册、登录这类公开接口。
 管理员才能访问的路由不在这两条规则的范围内。
 """
@@ -68,7 +68,8 @@ def find_authz_candidates(index: ProjectIndex, routes: list[dict[str, Any]]) -> 
                           f"路由 {method_path}，访问前提：{ACCESS_LABELS[route['access']]}")  # fmt: skip
 
         idor = False
-        for param in route["params"]:
+        # 越权指登录用户访问他人的资源；匿名路由走下面的缺失鉴权检查
+        for param in route["params"] if route["access"] == "user" else []:
             if not ID_PARAM.search(param) or param not in fn.params:
                 continue
             query = _query_using(fn.node, param)

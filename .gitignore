@@ -17,3 +17,7 @@ frontend/dist/
 # IDE
 .idea/
 .vscode/
+
+# 靶场本地运行时生成的数据库与上传文件
+targets/*/*.db
+targets/*/static/

@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import io
+import zipfile
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.models import Task
 from app.models.enums import Stage
 from app.pipeline import graph
 from app.pipeline.runner import runner
@@ -55,3 +59,37 @@ def test_stop_destroys_container(client: TestClient, login, real_sandbox, monkey
     resp = client.post(f"/api/tasks/{task['id']}/stop", headers=headers)
     assert resp.json()["status"] == "stopped"
     assert not real_sandbox.exists(task["id"])
+
+
+TARGETS = Path(__file__).resolve().parents[3] / "targets"
+
+
+def target_zip(name: str) -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        for path in sorted((TARGETS / name).rglob("*")):
+            if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".db":
+                zf.write(path, f"{name}/{path.relative_to(TARGETS / name).as_posix()}")
+    return buf.getvalue()
+
+
+@pytest.mark.network
+def test_user_center_dependency_is_prepared(client: TestClient, login, real_sandbox, run_async) -> None:
+    """SC-010：PyJWT 不在预装镜像里，侦察阶段自动下载 wheel 并装进任务虚拟环境。"""
+    headers = login("engineer")
+    resp = create_zip_task(client, headers, name="user-center.zip", data=target_zip("user-center"))
+    assert resp.status_code == 201, resp.text
+    task_id = resp.json()["id"]
+    body = wait_for(client, headers, task_id, finished, timeout=300)
+    assert body["status"] == "completed", body
+
+    async def load():
+        from app.core.db import session_factory
+
+        async with session_factory()() as session:
+            return (await session.get(Task, task_id)).deps_result
+
+    deps = run_async(load)
+    assert deps["ok"] is True and deps["missing"] == []
+    assert {"name": "pyjwt", "version": "2.9.0"} in deps["installed"]
+    assert [p["name"] for p in deps["preinstalled"]] == ["flask"]
