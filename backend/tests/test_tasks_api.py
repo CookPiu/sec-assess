@@ -135,6 +135,10 @@ def test_zip_task_runs_all_stages(client: TestClient, login, fake: FakeSandbox, 
         assert f"阶段开始：{label}" in messages
         assert any(m.startswith(f"阶段结束：{label}") for m in messages)
     assert any("Flask 3.0.3" in m for m in messages)
+    assert any(
+        row["stage"] == "poc_verify" and row["level"] == "warn" and row["message"] == "跳过动态验证：工程依赖未准备就绪"
+        for row in logs
+    )
     assert messages[-1] == "全部阶段完成"
     after = client.get(f"/api/tasks/{task['id']}/logs", headers=headers, params={"after": logs[-2]["id"]}).json()
     assert [x["id"] for x in after] == [logs[-1]["id"]]

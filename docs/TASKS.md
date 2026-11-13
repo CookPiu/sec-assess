@@ -33,14 +33,14 @@
 - [x] T021 越权规则与敏感信息规则（硬编码密钥、调试模式、配置暴露、弱密码存储）（backend/app/taint/rules_authz.py、backend/app/taint/rules_secrets.py）FR-007
 - [x] T022 [P] CVSS 3.1 基础分计算与各漏洞类别的默认向量（backend/app/core/cvss.py、backend/tests/test_cvss.py）FR-008 D-015
 - [x] T023 审计 Agent：大模型研判（4 路并发）、模型判定误报分组、模型不可用时回退默认向量（backend/app/pipeline/agents/audit.py）FR-008
-- [ ] T024 [P] 容器内探针执行脚本：读取用例 JSON、发往 `127.0.0.1`、返回请求与响应原文、检查 `/tmp` 标记文件（sandbox-images/probe/runner.py）D-014
-- [ ] T025 验证用例模板与命中判定：9 类探针、算式与随机名标记、测试账号自动注册（backend/app/verify/）FR-009 FR-010
-- [ ] T026 验证 Agent：启动工程副本、逐条执行用例、进程退出后重启、证据落库、未命中降级（backend/app/pipeline/agents/verify.py）FR-009 FR-010
+- [x] T024 [P] 容器内探针执行脚本：读取用例 JSON、发往 `127.0.0.1`、返回请求与响应原文、检查 `/tmp` 标记文件（sandbox-images/probe/runner.py）D-014
+- [x] T025 验证用例模板与命中判定：9 类探针、算式与随机名标记、测试账号自动注册（backend/app/verify/）FR-009 FR-010
+- [x] T026 验证 Agent：启动工程副本、逐条执行用例、进程退出后重启、证据落库、未命中降级（backend/app/pipeline/agents/verify.py）FR-009 FR-010
 - [x] T027 流水线编排：LangGraph 五阶段（exploit_chain、report_gen 先占位直通）、阶段起止落库与推送、停止与超时、排队与并发上限、后端启动时清理遗留容器与任务（backend/app/pipeline/state.py、backend/app/pipeline/graph.py、backend/app/pipeline/runner.py）FR-004 FR-005 D-004 D-019
 - [x] T028 任务接口：新建（含 Docker 可用性预检）、停止、查询，研发人员无权新建与停止（backend/app/api/tasks.py）FR-004 FR-005
 - [x] T029 [P] 概览大盘：项目列表、全局统计图、新建评估弹窗（Git 地址 / zip 上传）（frontend/src/views/DashboardView.vue、frontend/src/views/dashboard/NewTaskDialog.vue）FR-016
 - [x] T030 [P] 工作台监控区：阶段步进器、日志滚动窗、资源曲线、停止按钮，用 fetch 读取 SSE（frontend/src/views/workbench/MonitorPanel.vue、frontend/src/api/sse.ts）FR-014 FR-017 SC-005
-- [ ] T031 US1 端到端测试：两个靶场跑到 completed，检出结果与 DESIGN.md 第 8 节清单一致、诱饵无 Verified，停止后数据保留（backend/tests/e2e/test_pipeline.py）SC-001 SC-002 SC-006 SC-010
+- [x] T031 US1 端到端测试：两个靶场跑到 completed，检出结果与 DESIGN.md 第 8 节清单一致、诱饵无 Verified，停止后数据保留（backend/tests/e2e/test_pipeline.py）SC-001 SC-002 SC-006 SC-010
 
 ## US2 复核漏洞证据（P1）
 
