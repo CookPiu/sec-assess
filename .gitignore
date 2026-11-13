@@ -1,0 +1,19 @@
+# 密钥与本机配置
+.env
+
+# 运行数据：SQLite 库、源码副本、wheel 缓存、导出报告
+data/
+
+# Python
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+*.pyc
+
+# 前端
+**/node_modules/
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
