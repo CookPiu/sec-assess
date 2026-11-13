@@ -44,3 +44,19 @@ def test_unconfigured_llm_returns_none(app_env) -> None:
     client = LLMClient()
     assert not client.configured
     assert asyncio.run(client.chat_json("system", "user")) is None
+
+
+def test_llm_client_uses_short_timeout_and_retries(app_env, monkeypatch) -> None:
+    from app.core.config import get_settings
+
+    monkeypatch.setenv("LLM_API_KEY", "test-only-key")
+    monkeypatch.setenv("LLM_MODEL", "test-model")
+    get_settings.cache_clear()
+    try:
+        client = LLMClient()
+        assert client.configured
+        assert client._client.timeout == 20 and client._client.max_retries == 2
+    finally:
+        monkeypatch.delenv("LLM_API_KEY")
+        monkeypatch.delenv("LLM_MODEL")
+        get_settings.cache_clear()

@@ -36,7 +36,9 @@ class Settings(BaseSettings):
     llm_model: str = ""
     llm_api_key: str = ""
     llm_base_url: str = "https://api.deepseek.com"
-    llm_timeout_seconds: float = 60
+    # 研判请求偶尔卡住到超时，重新发起通常几秒内返回，所以超时取短、重试取多
+    llm_timeout_seconds: float = 20
+    llm_max_retries: int = 2
 
     sandbox_image: str = "sec-assess/sandbox-python:3.12"
 
