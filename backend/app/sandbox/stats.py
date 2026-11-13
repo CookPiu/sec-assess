@@ -1,4 +1,4 @@
-"""资源采样：读取 Docker stats 流，每 2 秒回调一次 CPU、内存、进程数（FR-014）。"""
+"""资源采样：读取 Docker stats 流，约每秒回调一次 CPU、内存、进程数（FR-014）。"""
 
 from __future__ import annotations
 
@@ -48,7 +48,8 @@ class StatsSampler:
         manager: SandboxManager,
         task_id: int,
         on_sample: Callable[[dict[str, float | int]], None],
-        interval: float = 2.0,
+        # Docker stats 流约每秒一个样本；节流阈值小于该间隔即逐个推送，刷新间隔约 1 秒（SC-005 要求不超过 2 秒）
+        interval: float = 0.5,
     ) -> None:
         self._manager = manager
         self._task_id = task_id

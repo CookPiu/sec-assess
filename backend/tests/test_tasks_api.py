@@ -133,6 +133,11 @@ def test_zip_task_runs_all_stages(client: TestClient, login, fake: FakeSandbox, 
     assert body["quota"]["max_concurrent"] == 1
     assert fake.created == [task["id"]] and task["id"] in fake.destroyed
 
+    audit = client.get("/api/audit-logs", headers=login("admin"), params={"action": "task_create"}).json()
+    entry = next(x for x in audit["items"] if x["target_id"] == str(task["id"]))
+    assert entry["username"] == "engineer" and entry["target_type"] == "task"
+    assert entry["detail"]["project_name"] == "shop-demo" and entry["detail"]["source_type"] == "zip"
+
     logs = client.get(f"/api/tasks/{task['id']}/logs", headers=headers).json()
     messages = [x["message"] for x in logs]
     for label in ("环境侦察", "源码审计", "动态验证", "攻击路径推演", "补丁与报告"):

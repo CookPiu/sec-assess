@@ -78,4 +78,4 @@
 
 ## 收尾
 
-- [ ] T051 对照 SPEC.md 每条 FR、SC 和各场景验收逐条核对，录制演示截图（docs/screenshots/）
+- [x] T051 对照 SPEC.md 每条 FR、SC 和各场景验收逐条核对，录制演示截图（docs/screenshots/）

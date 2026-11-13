@@ -47,6 +47,23 @@ def test_runs_as_non_root_and_cannot_escalate(manager: SandboxManager, sandbox: 
     assert result.exit_code != 0
 
 
+def test_quota_and_hardening_applied(manager: SandboxManager, sandbox: int) -> None:
+    """FR-003：配额与加固项落到容器配置上。"""
+    attrs = manager._container(sandbox).attrs
+    host = attrs["HostConfig"]
+    assert (host["NanoCpus"], host["Memory"], host["MemorySwap"], host["PidsLimit"]) == (
+        500_000_000,
+        256 * 1024 * 1024,
+        256 * 1024 * 1024,
+        64,
+    )
+    assert host["NetworkMode"] == "none" and host["ReadonlyRootfs"] is True
+    assert host["CapDrop"] == ["ALL"] and "no-new-privileges:true" in host["SecurityOpt"]
+    assert attrs["Config"]["User"] == "10001:10001"
+    mounts = {m["Destination"]: m["RW"] for m in attrs["Mounts"]}
+    assert mounts["/src"] is False and mounts["/work"] is True
+
+
 def test_only_loopback_interface_and_no_outbound(manager: SandboxManager, sandbox: int) -> None:
     ifaces = manager.exec(sandbox, ["python", "-c", "import socket; print([n for _, n in socket.if_nameindex()])"])
     assert ifaces.ok, ifaces.stderr

@@ -16,7 +16,7 @@ interface Metrics {
 }
 
 const MAX_LOGS = 3000
-const MAX_POINTS = 150 // 2 秒一个点，约 5 分钟
+const MAX_POINTS = 300 // 约 1 秒一个点，约 5 分钟
 
 const props = defineProps<{ taskId: number }>()
 const task = defineModel<TaskOut | null>('task', { required: true })
