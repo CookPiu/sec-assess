@@ -17,6 +17,11 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler): void {
   onUnauthorized = handler
 }
 
+/** 令牌失效时由请求层调用，SSE 等不经过 request 的连接也用它 */
+export function notifyUnauthorized(): void {
+  onUnauthorized?.()
+}
+
 function detailOf(body: unknown, fallback: string): string {
   if (body && typeof body === 'object' && 'detail' in body) {
     const detail = (body as { detail: unknown }).detail

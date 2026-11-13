@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 import { fetchMe, login as loginApi, type Role, type User } from '@/api/auth'
+import { ApiError } from '@/api/http'
 import { getToken, setToken } from '@/api/token'
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -28,14 +29,21 @@ export const useAuthStore = defineStore('auth', () => {
     setToken(result.token)
   }
 
-  /** 页面刷新后用已保存的令牌取回当前用户；令牌失效时清除登录状态 */
+  /**
+   * 页面刷新后用已保存的令牌取回当前用户。令牌失效（401）时清除登录状态并返回 null；
+   * 后端暂时连不上等其他错误原样抛出，保留令牌，后端恢复后刷新即可继续使用。
+   */
   async function ensureUser(): Promise<User | null> {
     if (!token.value) return null
     if (user.value) return user.value
     try {
       user.value = await fetchMe()
-    } catch {
-      logout()
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        logout()
+        return null
+      }
+      throw err
     }
     return user.value
   }

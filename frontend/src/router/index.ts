@@ -2,6 +2,7 @@ import { ElMessage } from 'element-plus'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 import type { Role } from '@/api/auth'
+import { ApiError } from '@/api/http'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -72,12 +73,18 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
   if (to.meta.public) {
-    return auth.isLoggedIn && to.name === 'login' ? { name: 'dashboard' } : true
+    // 只有确认过身份才跳过登录页；令牌还在但后端连不上时停留在登录页
+    return auth.user && to.name === 'login' ? { name: 'dashboard' } : true
   }
-  const user = await auth.ensureUser()
-  if (!user) {
-    return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
+  const toLogin = { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
+  let user
+  try {
+    user = await auth.ensureUser()
+  } catch (err) {
+    ElMessage.error(err instanceof ApiError ? err.message : '无法获取登录状态')
+    return toLogin
   }
+  if (!user) return toLogin
   if (to.meta.roles && !to.meta.roles.includes(user.role)) {
     ElMessage.warning('当前角色无权访问该页面')
     return { name: 'dashboard' }

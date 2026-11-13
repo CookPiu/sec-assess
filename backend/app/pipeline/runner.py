@@ -152,6 +152,8 @@ class PipelineRunner:
 
     async def _finish(self, ctx: TaskContext, status: TaskStatus, error: str | None) -> None:
         ctx.stop_sampler()
+        # 收尾日志属于整个任务；停在哪个阶段由 task.current_stage 记录
+        ctx.stage = None
         if ctx.container_started:
             try:
                 await asyncio.to_thread(self.manager.destroy, ctx.task_id)

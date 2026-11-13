@@ -49,11 +49,22 @@ class TaskContext:
             raise StopRequested
 
     async def log(self, message: str, level: str = "info") -> None:
-        """写入阶段日志并推送到工作台。"""
+        """写入阶段日志并推送到工作台；事件带日志 id，前端断线重连补拉历史时据此去重。"""
+        entry = StageLog(task_id=self.task_id, stage=self.stage, level=level, message=message)
         async with session_factory()() as session:
-            session.add(StageLog(task_id=self.task_id, stage=self.stage, level=level, message=message))
+            session.add(entry)
             await session.commit()
-        bus.publish(self.task_id, "log", {"stage": self.stage, "level": level, "message": message})
+        bus.publish(
+            self.task_id,
+            "log",
+            {
+                "id": entry.id,
+                "stage": self.stage,
+                "level": level,
+                "message": message,
+                "created_at": entry.created_at.isoformat(),
+            },
+        )
 
     async def enter_stage(self, stage: Stage) -> None:
         self.stage = stage
