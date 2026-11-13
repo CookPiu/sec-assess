@@ -228,11 +228,11 @@ async function adopt(): Promise<void> {
 }
 
 .add {
-  color: #1a7f37;
+  color: var(--app-success);
 }
 
 .del {
-  color: #cf222e;
+  color: var(--app-danger);
 }
 
 .muted {
@@ -254,11 +254,11 @@ async function adopt(): Promise<void> {
   margin: 0;
   max-height: 420px;
   overflow: auto;
-  background: #f6f8fa;
+  background: var(--app-surface-alt);
   border: 1px solid var(--app-border);
-  border-radius: 4px;
+  border-radius: var(--app-radius-sm);
   padding: 10px 0;
-  font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace;
+  font-family: var(--app-font-mono);
   font-size: 12.5px;
   line-height: 1.6;
 }
@@ -271,20 +271,22 @@ async function adopt(): Promise<void> {
 }
 
 .diff .head {
-  color: #57606a;
+  color: var(--app-text-secondary);
   font-weight: 600;
 }
 
 .diff .hunk {
-  color: #0969da;
-  background: #ddf4ff;
+  color: var(--app-primary);
+  background: var(--app-primary-soft);
 }
 
 .diff .add {
-  background: #dafbe1;
+  color: var(--app-text);
+  background: var(--app-success-soft);
 }
 
 .diff .del {
-  background: #ffebe9;
+  color: var(--app-text);
+  background: var(--app-danger-soft);
 }
 </style>

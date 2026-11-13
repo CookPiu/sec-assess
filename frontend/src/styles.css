@@ -1,8 +1,130 @@
+/*
+ * 设计变量：浅色为默认，html.dark 时切换为深色。
+ * 图表和拓扑图用的颜色在 src/utils/theme.ts 中有同名的一份，修改时两处一起改。
+ */
 :root {
-  --app-bg: #f5f7fa;
-  --app-header-bg: #ffffff;
-  --app-border: #e4e7ed;
-  --app-text-muted: #909399;
+  --app-bg: #f3f5fa;
+  --app-surface: #ffffff;
+  --app-surface-alt: #f6f8fc;
+  --app-surface-sunken: #eef1f7;
+  --app-border: #e2e6ef;
+  --app-border-strong: #cfd5e2;
+  --app-text: #1b2232;
+  --app-text-secondary: #4b566b;
+  --app-text-muted: #8590a6;
+  --app-primary: #3f5bf6;
+  --app-primary-soft: #eef1ff;
+  --app-success: #17946a;
+  --app-success-soft: #e6f6ef;
+  --app-warning: #d98a0b;
+  --app-warning-soft: #fdf4e3;
+  --app-danger: #d6334a;
+  --app-danger-soft: #fdebee;
+
+  --sev-critical: #b3123a;
+  --sev-high: #e2513c;
+  --sev-medium: #e09a16;
+  --sev-low: #3a78d8;
+  --sev-info: #8590a6;
+
+  /* 侧栏在两种主题下都用深色 */
+  --app-nav-bg: #111829;
+  --app-nav-text: #a9b2c7;
+  --app-nav-active: #ffffff;
+  --app-nav-hover: rgba(255, 255, 255, 0.06);
+  --app-nav-border: rgba(255, 255, 255, 0.08);
+
+  /* 日志、报文等终端风格区域 */
+  --app-term-bg: #0f1523;
+  --app-term-text: #d3d9e6;
+  --app-term-muted: #6f7a92;
+
+  --app-radius: 12px;
+  --app-radius-sm: 8px;
+  --app-shadow: 0 1px 2px rgba(17, 24, 41, 0.04), 0 4px 16px rgba(17, 24, 41, 0.05);
+  --app-shadow-lift: 0 2px 4px rgba(17, 24, 41, 0.06), 0 12px 32px rgba(17, 24, 41, 0.1);
+  --app-font-mono: 'JetBrains Mono', 'Cascadia Code', 'Cascadia Mono', Consolas, 'Courier New', monospace;
+  --app-mix-base: #ffffff;
+
+  /* Element Plus 主色与表面色接入设计变量 */
+  --el-color-primary: var(--app-primary);
+  --el-color-primary-light-3: color-mix(in srgb, var(--app-primary) 70%, var(--app-mix-base));
+  --el-color-primary-light-5: color-mix(in srgb, var(--app-primary) 50%, var(--app-mix-base));
+  --el-color-primary-light-7: color-mix(in srgb, var(--app-primary) 30%, var(--app-mix-base));
+  --el-color-primary-light-8: color-mix(in srgb, var(--app-primary) 20%, var(--app-mix-base));
+  --el-color-primary-light-9: color-mix(in srgb, var(--app-primary) 10%, var(--app-mix-base));
+  --el-color-primary-dark-2: color-mix(in srgb, var(--app-primary) 80%, #000000);
+  --el-bg-color: var(--app-surface);
+  --el-bg-color-overlay: var(--app-surface);
+  --el-bg-color-page: var(--app-bg);
+  --el-fill-color-blank: var(--app-surface);
+  --el-border-color: var(--app-border);
+  --el-border-color-light: var(--app-border);
+  --el-border-color-lighter: var(--app-border);
+  --el-text-color-primary: var(--app-text);
+  --el-text-color-regular: var(--app-text-secondary);
+  --el-text-color-secondary: var(--app-text-muted);
+  --el-border-radius-base: 6px;
+  --el-font-family: inherit;
+
+  color-scheme: light;
+}
+
+html.dark {
+  --app-bg: #0b1020;
+  --app-surface: #151b2b;
+  --app-surface-alt: #1a2134;
+  --app-surface-sunken: #10162a;
+  --app-border: #283149;
+  --app-border-strong: #364163;
+  --app-text: #e7eaf3;
+  --app-text-secondary: #b4bccd;
+  --app-text-muted: #7f89a1;
+  --app-primary: #7489ff;
+  --app-primary-soft: rgba(116, 137, 255, 0.14);
+  --app-success: #3fcf95;
+  --app-success-soft: rgba(63, 207, 149, 0.13);
+  --app-warning: #f2b544;
+  --app-warning-soft: rgba(242, 181, 68, 0.13);
+  --app-danger: #ff6680;
+  --app-danger-soft: rgba(255, 102, 128, 0.13);
+
+  --sev-critical: #ff5277;
+  --sev-high: #ff7d5e;
+  --sev-medium: #f4b740;
+  --sev-low: #64a0ff;
+  --sev-info: #7f89a1;
+
+  --app-nav-bg: #0a0f1d;
+  --app-nav-border: rgba(255, 255, 255, 0.06);
+  --app-term-bg: #0a0f1c;
+
+  --app-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --app-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --app-mix-base: #151b2b;
+
+  /* Element Plus 暗色变量会覆盖主色，这里重新接入 */
+  --el-color-primary: var(--app-primary);
+  --el-color-primary-light-3: color-mix(in srgb, var(--app-primary) 70%, var(--app-mix-base));
+  --el-color-primary-light-5: color-mix(in srgb, var(--app-primary) 50%, var(--app-mix-base));
+  --el-color-primary-light-7: color-mix(in srgb, var(--app-primary) 30%, var(--app-mix-base));
+  --el-color-primary-light-8: color-mix(in srgb, var(--app-primary) 20%, var(--app-mix-base));
+  --el-color-primary-light-9: color-mix(in srgb, var(--app-primary) 10%, var(--app-mix-base));
+  --el-color-primary-dark-2: color-mix(in srgb, var(--app-primary) 80%, #ffffff);
+  --el-bg-color: var(--app-surface);
+  --el-bg-color-overlay: var(--app-surface-alt);
+  --el-bg-color-page: var(--app-bg);
+  --el-fill-color-blank: var(--app-surface);
+  --el-fill-color-light: var(--app-surface-alt);
+  --el-fill-color-lighter: var(--app-surface-alt);
+  --el-border-color: var(--app-border);
+  --el-border-color-light: var(--app-border);
+  --el-border-color-lighter: var(--app-border);
+  --el-text-color-primary: var(--app-text);
+  --el-text-color-regular: var(--app-text-secondary);
+  --el-text-color-secondary: var(--app-text-muted);
+
+  color-scheme: dark;
 }
 
 html,
@@ -14,21 +136,186 @@ body,
 
 body {
   background: var(--app-bg);
-  color: #303133;
+  color: var(--app-text);
   font-family:
-    'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans SC', -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s;
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--app-font-mono);
 }
 
 .page {
-  padding: 20px 24px;
-  max-width: 1440px;
+  padding: 24px 28px 40px;
+  max-width: 1480px;
   margin: 0 auto;
   box-sizing: border-box;
 }
 
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 20px;
+}
+
 .page-title {
-  margin: 0 0 16px;
-  font-size: 20px;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.page-desc {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--app-text-muted);
+}
+
+/* 面板：页面上的主要分区 */
+.panel {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--app-border);
+  box-sizing: border-box;
+}
+
+.panel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14.5px;
   font-weight: 600;
+}
+
+.panel-body {
+  padding: 16px 18px;
+}
+
+.muted {
+  color: var(--app-text-muted);
+  font-size: 12px;
+}
+
+.mono {
+  font-family: var(--app-font-mono);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 小节标题前的强调条 */
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 22px 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.section-title > span:first-child::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 13px;
+  margin-right: 8px;
+  border-radius: 2px;
+  background: var(--app-primary);
+  vertical-align: -1px;
+}
+
+/* 终端风格的原文区域 */
+.term {
+  margin: 0;
+  overflow: auto;
+  background: var(--app-term-bg);
+  color: var(--app-term-text);
+  border-radius: var(--app-radius-sm);
+  padding: 12px 14px;
+  font-family: var(--app-font-mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Element Plus 组件在设计变量下的细节调整 */
+.el-card {
+  border-radius: var(--app-radius);
+  border-color: var(--app-border);
+}
+
+.el-dialog {
+  border-radius: var(--app-radius);
+}
+
+.el-table {
+  --el-table-header-bg-color: var(--app-surface-alt);
+  --el-table-row-hover-bg-color: var(--app-surface-alt);
+  --el-table-tr-bg-color: var(--app-surface);
+  --el-table-bg-color: var(--app-surface);
+  --el-table-border-color: var(--app-border);
+}
+
+.el-table th.el-table__cell {
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--app-text-muted);
+}
+
+.el-tabs__item {
+  font-weight: 500;
+}
+
+html.dark .el-tag--dark.el-tag--info {
+  --el-tag-bg-color: #4b5570;
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: 16px 14px 32px;
+  }
+
+  .page-title {
+    font-size: 19px;
+  }
+
+  .panel-head {
+    padding: 0 14px;
+  }
+
+  .panel-body {
+    padding: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

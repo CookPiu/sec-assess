@@ -65,7 +65,7 @@ onBeforeUnmount(() => {
 .diff-viewer {
   width: 100%;
   border: 1px solid var(--app-border);
-  border-radius: 4px;
+  border-radius: var(--app-radius-sm);
   overflow: hidden;
 }
 </style>

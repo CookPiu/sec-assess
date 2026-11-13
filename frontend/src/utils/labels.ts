@@ -26,11 +26,12 @@ export const STATUS_META: Record<TaskStatus, { label: string; tag: TagType }> = 
 
 export const ACTIVE_STATUSES: TaskStatus[] = ['created', 'running']
 
-export const SEVERITIES: { key: Severity; label: string; color: string }[] = [
-  { key: 'critical', label: '严重', color: '#a8071a' },
-  { key: 'high', label: '高危', color: '#f56c6c' },
-  { key: 'medium', label: '中危', color: '#e6a23c' },
-  { key: 'low', label: '低危', color: '#409eff' },
+/** color 为 CSS 变量，随明暗主题变化；图表中的颜色取 utils/theme.ts 的 palette */
+export const SEVERITIES: { key: Exclude<Severity, 'info'>; label: string; color: string }[] = [
+  { key: 'critical', label: '严重', color: 'var(--sev-critical)' },
+  { key: 'high', label: '高危', color: 'var(--sev-high)' },
+  { key: 'medium', label: '中危', color: 'var(--sev-medium)' },
+  { key: 'low', label: '低危', color: 'var(--sev-low)' },
 ]
 
 export const SEVERITY_META: Record<Severity, { label: string; tag: TagType }> = {

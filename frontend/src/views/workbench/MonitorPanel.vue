@@ -6,7 +6,8 @@ import { openEventStream, type ServerEvent } from '@/api/sse'
 import { getTask, listLogs, type LogEntry, type StageKey, type TaskOut, type TaskStatus } from '@/api/tasks'
 import EChart from '@/components/EChart.vue'
 import { formatClock } from '@/utils/format'
-import { STAGE_LABELS, STAGES } from '@/utils/labels'
+import { STAGE_LABELS } from '@/utils/labels'
+import { palette } from '@/utils/theme'
 
 interface Metrics {
   cpu_percent: number
@@ -20,9 +21,10 @@ const MAX_POINTS = 300 // 约 1 秒一个点，约 5 分钟
 
 const props = defineProps<{ taskId: number }>()
 const task = defineModel<TaskOut | null>('task', { required: true })
+/** 日志里出现“阶段结束”的阶段，供页头的阶段进度使用 */
+const doneStages = defineModel<Set<StageKey>>('doneStages', { required: true })
 
 const logs = ref<LogEntry[]>([])
-const doneStages = ref(new Set<StageKey>())
 const samples = ref<{ t: string; m: Metrics }[]>([])
 const connected = ref(false)
 const follow = ref(true)
@@ -36,7 +38,7 @@ function appendLogs(entries: LogEntry[]): void {
   lastLogId = fresh[fresh.length - 1].id
   logs.value = [...logs.value, ...fresh].slice(-MAX_LOGS)
   for (const e of fresh) {
-    if (e.stage && e.message.startsWith('阶段结束')) doneStages.value.add(e.stage)
+    if (e.stage && e.message.startsWith('阶段结束')) doneStages.value = new Set(doneStages.value).add(e.stage)
   }
   if (follow.value) void nextTick(() => logBox.value?.scrollTo({ top: logBox.value.scrollHeight }))
 }
@@ -54,7 +56,7 @@ function onEvent(ev: ServerEvent): void {
   } else if (ev.event === 'stage' && task.value) {
     const stage = data.stage as StageKey
     task.value = { ...task.value, current_stage: stage }
-    if (data.state === 'done') doneStages.value.add(stage)
+    if (data.state === 'done') doneStages.value = new Set(doneStages.value).add(stage)
   } else if (ev.event === 'status') {
     const status = data.status as TaskStatus
     if (task.value) task.value = { ...task.value, status, error: (data.error as string | null) ?? null }
@@ -92,186 +94,282 @@ onBeforeUnmount(() => closeStream?.())
 
 const isActive = computed(() => task.value?.status === 'running' || task.value?.status === 'created')
 
-type StepStatus = 'wait' | 'process' | 'finish' | 'error' | 'success'
-
-const steps = computed(() => {
-  const t = task.value
-  const currentIdx = t?.current_stage ? STAGES.findIndex((s) => s.key === t.current_stage) : -1
-  return STAGES.map((s, i) => {
-    let status: StepStatus = 'wait'
-    let description = ''
-    if (t?.status === 'completed') {
-      status = 'success'
-    } else if (i < currentIdx || doneStages.value.has(s.key)) {
-      status = 'finish'
-    } else if (i === currentIdx) {
-      if (t?.status === 'running') {
-        status = 'process'
-        description = '进行中'
-      } else if (t?.status === 'failed') {
-        status = 'error'
-        description = '失败'
-      } else if (t?.status === 'stopped') {
-        status = 'error'
-        description = '已停止'
-      }
-    } else if (i === 0 && t?.status === 'created') {
-      description = '排队中'
-    }
-    return { ...s, status, description }
-  })
-})
-
 const latest = computed(() => samples.value[samples.value.length - 1]?.m ?? null)
 
-const metricsOption = computed<EChartsCoreOption>(() => ({
-  animation: false,
-  tooltip: { trigger: 'axis' },
-  legend: { top: 0 },
-  grid: { left: 48, right: 56, top: 32, bottom: 28 },
-  xAxis: { type: 'category', boundaryGap: false, data: samples.value.map((s) => formatClock(s.t)) },
-  yAxis: [
-    { type: 'value', name: 'CPU %', min: 0 },
-    { type: 'value', name: '内存 MB', min: 0, max: latest.value?.memory_limit_mb || undefined },
-  ],
-  series: [
-    { name: 'CPU', type: 'line', showSymbol: false, data: samples.value.map((s) => s.m.cpu_percent) },
-    { name: '内存', type: 'line', showSymbol: false, yAxisIndex: 1, data: samples.value.map((s) => s.m.memory_mb) },
-    { name: '进程数', type: 'line', showSymbol: false, data: samples.value.map((s) => s.m.pids) },
-  ],
-}))
+const memoryRatio = computed(() => {
+  const m = latest.value
+  return m && m.memory_limit_mb ? Math.min(100, (m.memory_mb / m.memory_limit_mb) * 100) : 0
+})
+
+function backToBottom(): void {
+  follow.value = true
+  void nextTick(() => logBox.value?.scrollTo({ top: logBox.value.scrollHeight }))
+}
+
+const metricsOption = computed<EChartsCoreOption>(() => {
+  const c = palette.value
+  const axis = {
+    axisLine: { lineStyle: { color: c.border } },
+    axisLabel: { color: c.muted },
+    splitLine: { lineStyle: { color: c.grid } },
+    nameTextStyle: { color: c.muted },
+  }
+  return {
+    animation: false,
+    color: c.series,
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: c.surface,
+      borderColor: c.border,
+      textStyle: { color: c.text },
+    },
+    legend: { top: 0, textStyle: { color: c.textSecondary }, icon: 'roundRect', itemWidth: 12, itemHeight: 4 },
+    grid: { left: 48, right: 56, top: 36, bottom: 28 },
+    xAxis: { type: 'category', boundaryGap: false, data: samples.value.map((s) => formatClock(s.t)), ...axis },
+    yAxis: [
+      { type: 'value', name: 'CPU %', min: 0, ...axis },
+      { type: 'value', name: '内存 MB', min: 0, max: latest.value?.memory_limit_mb || undefined, ...axis },
+    ],
+    series: [
+      {
+        name: 'CPU',
+        type: 'line',
+        showSymbol: false,
+        lineStyle: { width: 2 },
+        areaStyle: { opacity: 0.08 },
+        data: samples.value.map((s) => s.m.cpu_percent),
+      },
+      {
+        name: '内存',
+        type: 'line',
+        showSymbol: false,
+        yAxisIndex: 1,
+        lineStyle: { width: 2 },
+        data: samples.value.map((s) => s.m.memory_mb),
+      },
+      {
+        name: '进程数',
+        type: 'line',
+        showSymbol: false,
+        lineStyle: { width: 2 },
+        data: samples.value.map((s) => s.m.pids),
+      },
+    ],
+  }
+})
 </script>
 
 <template>
   <div class="monitor">
-    <el-card shadow="never" class="block">
-      <el-steps :active="-1" align-center>
-        <el-step v-for="s in steps" :key="s.key" :title="s.label" :status="s.status" :description="s.description" />
-      </el-steps>
-      <el-alert
-        v-if="task?.error"
-        :title="task.error"
-        type="error"
-        show-icon
-        :closable="false"
-        class="error"
-      />
-    </el-card>
+    <section class="panel logs-panel">
+      <div class="panel-head">
+        <span class="panel-title">
+          <el-icon><Tickets /></el-icon>
+          运行日志
+        </span>
+        <span class="muted head-meta">
+          <span v-if="isActive" :class="['live', { on: connected }]">
+            <i />{{ connected ? '实时' : '连接中' }}
+          </span>
+          <span class="num">{{ logs.length }} 行</span>
+          <el-button v-if="!follow" size="small" link type="primary" @click="backToBottom">回到底部</el-button>
+        </span>
+      </div>
+      <div ref="logBox" class="logs" @scroll="onScroll">
+        <div v-for="line in logs" :key="line.id" :class="['line', line.level]">
+          <span class="time">{{ formatClock(line.created_at) }}</span>
+          <span class="stage">{{ line.stage ? STAGE_LABELS[line.stage] : '任务' }}</span>
+          <span class="msg">{{ line.message }}</span>
+        </div>
+        <div v-if="!logs.length" class="empty">
+          {{ task?.status === 'created' ? '任务排队中，等待前面的评估结束' : '暂无日志' }}
+        </div>
+      </div>
+    </section>
 
-    <el-row :gutter="16">
-      <el-col :xs="24" :lg="14" class="block">
-        <el-card shadow="never" class="fill">
-          <template #header>
-            <div class="card-header">
-              <span>运行日志</span>
-              <span class="muted">
-                <el-tag v-if="isActive" :type="connected ? 'success' : 'info'" size="small" effect="plain">
-                  {{ connected ? '实时' : '连接中' }}
-                </el-tag>
-                {{ logs.length }} 行
-              </span>
-            </div>
-          </template>
-          <div ref="logBox" class="logs" @scroll="onScroll">
-            <div v-for="line in logs" :key="line.id" :class="['line', line.level]">
-              <span class="time">{{ formatClock(line.created_at) }}</span>
-              <span class="stage">{{ line.stage ? STAGE_LABELS[line.stage] : '任务' }}</span>
-              <span class="msg">{{ line.message }}</span>
-            </div>
-            <div v-if="!logs.length" class="empty">{{ task?.status === 'created' ? '任务排队中，等待前面的评估结束' : '暂无日志' }}</div>
+    <section class="panel res-panel">
+      <div class="panel-head">
+        <span class="panel-title">
+          <el-icon><Odometer /></el-icon>
+          沙箱资源
+        </span>
+        <span v-if="isActive && samples.length" class="muted">约每秒刷新</span>
+      </div>
+      <div class="panel-body">
+        <div v-if="samples.length" class="gauges">
+          <div class="gauge">
+            <span class="g-label">CPU</span>
+            <b class="num">{{ latest ? `${latest.cpu_percent}%` : '—' }}</b>
           </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :lg="10" class="block">
-        <el-card shadow="never" class="fill">
-          <template #header>
-            <div class="card-header">
-              <span>沙箱资源</span>
-              <span v-if="latest" class="muted">
-                CPU {{ latest.cpu_percent }}% · 内存 {{ latest.memory_mb }} / {{ latest.memory_limit_mb }} MB · 进程
-                {{ latest.pids }}
-              </span>
-            </div>
-          </template>
-          <EChart v-if="samples.length" :option="metricsOption" height="300px" />
-          <el-empty
-            v-else
-            :image-size="70"
-            :description="isActive ? '等待沙箱容器启动后的第一组采样' : '资源曲线只在任务运行时实时显示，不保存历史'"
-          />
-        </el-card>
-      </el-col>
-    </el-row>
+          <div class="gauge">
+            <span class="g-label">内存</span>
+            <b class="num">
+              {{ latest ? latest.memory_mb : '—' }}<small v-if="latest"> / {{ latest.memory_limit_mb }} MB</small>
+            </b>
+            <span class="meter"><i :style="{ width: `${memoryRatio}%` }" /></span>
+          </div>
+          <div class="gauge">
+            <span class="g-label">进程</span>
+            <b class="num">{{ latest ? latest.pids : '—' }}</b>
+          </div>
+        </div>
+        <EChart v-if="samples.length" :option="metricsOption" height="268px" />
+        <el-empty
+          v-else
+          :image-size="64"
+          :description="isActive ? '等待沙箱容器启动后的第一组采样' : '资源曲线只在任务运行时实时显示，不保存历史'"
+        />
+      </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
-.block {
-  margin-bottom: 16px;
+.monitor {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 16px;
 }
 
-.error {
-  margin-top: 16px;
-}
-
-.fill {
-  height: 100%;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.muted {
+.head-meta {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: 10px;
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--app-text-muted);
 }
 
+.live i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--app-text-muted);
+}
+
+.live.on {
+  color: var(--app-success);
+}
+
+.live.on i {
+  background: var(--app-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-success) 25%, transparent);
+}
+
+.logs-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .logs {
-  height: 300px;
+  height: 404px;
   overflow-y: auto;
-  background: #1e1e1e;
-  color: #d4d4d4;
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace;
+  background: var(--app-term-bg);
+  color: var(--app-term-text);
+  padding: 10px 14px;
+  font-family: var(--app-font-mono);
   font-size: 12.5px;
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
 .line {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   white-space: pre-wrap;
   word-break: break-all;
 }
 
 .line.warn .msg {
-  color: #e5c07b;
+  color: #f2c167;
 }
 
 .line.error .msg {
-  color: #f48771;
+  color: #ff8a8a;
 }
 
 .time {
-  color: #7f848e;
+  color: var(--app-term-muted);
   flex-shrink: 0;
 }
 
 .stage {
-  color: #61afef;
+  color: #8fa2ff;
   flex-shrink: 0;
-  min-width: 6em;
+  min-width: 6.5em;
 }
 
 .empty {
-  color: #7f848e;
+  color: var(--app-term-muted);
+}
+
+.gauges {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.gauge {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface-alt);
+  border: 1px solid var(--app-border);
+}
+
+.g-label {
+  font-size: 12px;
+  color: var(--app-text-muted);
+}
+
+.gauge b {
+  font-size: 19px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gauge small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--app-text-muted);
+}
+
+.meter {
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background: var(--app-surface-sunken);
+  overflow: hidden;
+}
+
+.meter i {
+  display: block;
+  height: 100%;
+  background: var(--app-success);
+  transition: width 0.4s;
+}
+
+@media (max-width: 1100px) {
+  .monitor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .logs {
+    height: 320px;
+  }
+
+  .stage {
+    display: none;
+  }
 }
 </style>

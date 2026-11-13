@@ -4,8 +4,10 @@ import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { getFinding, getSource, type Evidence, type FindingDetail, type TaintStep } from '@/api/findings'
 import { ApiError } from '@/api/http'
 import type { LineMark } from '@/components/CodeViewer.vue'
+import SeverityBadge from '@/components/SeverityBadge.vue'
+import { describeVector } from '@/utils/cvss'
 import { formatTime } from '@/utils/format'
-import { ACCESS_LABELS, CATEGORY_LABELS, FINDING_GROUP_META, findingGroup, SEVERITY_META } from '@/utils/labels'
+import { ACCESS_LABELS, CATEGORY_LABELS, FINDING_GROUP_META, findingGroup } from '@/utils/labels'
 import { languageOf } from '@/utils/language'
 import PatchPanel from '@/views/workbench/PatchPanel.vue'
 
@@ -106,18 +108,30 @@ const marks = computed<LineMark[]>(() => {
   return result
 })
 
-const group = computed(() => (detail.value ? FINDING_GROUP_META[findingGroup(detail.value)] : null))
+const group = computed(() => (detail.value ? findingGroup(detail.value) : null))
+const metrics = computed(() => describeVector(detail.value?.cvss_vector))
 
-const routeText = computed(() => {
-  const r = detail.value?.route
-  return r ? `${r.methods.join(' / ')} ${r.path}` : ''
-})
+/** 轨迹的第一步是外部输入，最后一步是触发点，中间为传播 */
+function stepRole(i: number): string {
+  const n = steps.value.length
+  if (n === 1) return '触发'
+  if (i === 0) return '来源'
+  return i === n - 1 ? '触发' : '传播'
+}
 
 function clip(text: string | null): string {
   if (!text) return '（空）'
   return text.length > MAX_RAW_CHARS
     ? `${text.slice(0, MAX_RAW_CHARS)}\n\n…… 共 ${text.length} 字符，仅显示前 ${MAX_RAW_CHARS} 字符`
     : text
+}
+
+/** 把响应原文按命中特征切段，命中的片段在界面上高亮；不用 v-html，原文按纯文本渲染 */
+function highlight(text: string | null, needle: string | null, hit: boolean): { text: string; mark: boolean }[] {
+  const body = clip(text)
+  if (!hit || !needle || needle.length < 4 || !body.includes(needle)) return [{ text: body, mark: false }]
+  const parts = body.split(needle)
+  return parts.flatMap((part, i) => (i === 0 ? [{ text: part, mark: false }] : [{ text: needle, mark: true }, { text: part, mark: false }]))
 }
 
 function caseText(ev: Evidence): string {
@@ -147,67 +161,106 @@ const evidenceHint = computed(() => {
     <el-empty v-if="!detail && !loading" :image-size="70" :description="error || '在左侧列表选择一个漏洞'" />
 
     <template v-if="detail">
-      <div class="head">
-        <div class="title">
-          <span class="code">{{ detail.code }}</span>
-          {{ detail.title }}
+      <header class="head">
+        <div class="head-main">
+          <div class="head-tags">
+            <span class="code mono">{{ detail.code }}</span>
+            <span v-if="group" :class="['group-tag', group]">{{ FINDING_GROUP_META[group].label }}</span>
+            <span class="cat">{{ CATEGORY_LABELS[detail.category] ?? detail.category }}</span>
+          </div>
+          <h3 class="title">{{ detail.title }}</h3>
         </div>
-        <div class="tags">
-          <el-tag :type="SEVERITY_META[detail.severity].tag" effect="dark" disable-transitions>
-            {{ SEVERITY_META[detail.severity].label }}
-          </el-tag>
-          <el-tag v-if="group" :type="group.tag" effect="plain" disable-transitions>{{ group.label }}</el-tag>
+        <div :class="['score-card', `sev-${detail.severity}`]">
+          <b class="num">{{ detail.cvss_score?.toFixed(1) ?? '—' }}</b>
+          <SeverityBadge :severity="detail.severity" />
+        </div>
+      </header>
+
+      <div class="facts">
+        <div class="fact">
+          <span class="fact-label">触发位置</span>
+          <span class="mono fact-value">{{ detail.file }}:{{ detail.line }}</span>
+        </div>
+        <div class="fact">
+          <span class="fact-label">入口路由</span>
+          <span v-if="detail.route" class="fact-value route">
+            <span v-for="m in detail.route.methods" :key="m" class="method">{{ m }}</span>
+            <span class="mono">{{ detail.route.path }}</span>
+            <span class="access">{{ ACCESS_LABELS[detail.route.access] ?? detail.route.access }}可访问</span>
+          </span>
+          <span v-else class="fact-value muted">无</span>
         </div>
       </div>
 
-      <el-descriptions :column="2" border size="small" class="block">
-        <el-descriptions-item label="类别">{{ CATEGORY_LABELS[detail.category] ?? detail.category }}</el-descriptions-item>
-        <el-descriptions-item label="位置">{{ detail.file }}:{{ detail.line }}</el-descriptions-item>
-        <el-descriptions-item label="入口路由">
-          <template v-if="detail.route">
-            <code>{{ routeText }}</code>
-            <span class="muted">（{{ ACCESS_LABELS[detail.route.access] ?? detail.route.access }}可访问）</span>
-          </template>
-          <span v-else class="muted">无</span>
-        </el-descriptions-item>
-        <el-descriptions-item label="CVSS 3.1">
-          <b>{{ detail.cvss_score?.toFixed(1) ?? '—' }}</b>
-          <code v-if="detail.cvss_vector" class="vector">{{ detail.cvss_vector }}</code>
-        </el-descriptions-item>
-        <el-descriptions-item label="研判" :span="2">
-          <el-tag size="small" :type="detail.judged_by === 'model' ? 'primary' : 'info'" disable-transitions>
-            {{ detail.judged_by === 'model' ? '大模型研判' : '默认向量' }}
-          </el-tag>
-          <span class="reason">{{ detail.reason || '无' }}</span>
-        </el-descriptions-item>
-      </el-descriptions>
+      <div v-if="metrics.length" class="vector">
+        <div class="vector-head">
+          <span class="fact-label">CVSS 3.1 基础指标</span>
+          <code class="vector-raw">{{ detail.cvss_vector }}</code>
+        </div>
+        <div class="metrics">
+          <span v-for="m in metrics" :key="m.key" :class="['metric', { risky: m.risky }]" :title="`${m.key}:${m.value}`">
+            <span class="m-label">{{ m.label }}</span>
+            <b>{{ m.text }}</b>
+          </span>
+        </div>
+      </div>
+      <div v-else-if="detail.cvss_vector" class="vector">
+        <span class="fact-label">CVSS 3.1</span>
+        <code class="vector-raw">{{ detail.cvss_vector }}</code>
+      </div>
+
+      <div class="judge">
+        <span :class="['judge-tag', detail.judged_by]">
+          <el-icon><component :is="detail.judged_by === 'model' ? 'MagicStick' : 'Operation'" /></el-icon>
+          {{ detail.judged_by === 'model' ? '大模型研判' : '默认向量' }}
+        </span>
+        <p>{{ detail.reason || '无' }}</p>
+      </div>
 
       <div class="section-title">
         <span>污点轨迹</span>
         <span class="nav">
-          <el-button size="small" :disabled="current <= 0" @click="current--">上一步</el-button>
-          <span class="muted">第 {{ current + 1 }} / {{ steps.length }} 步</span>
-          <el-button size="small" :disabled="current >= steps.length - 1" @click="current++">下一步</el-button>
+          <el-button size="small" circle :disabled="current <= 0" aria-label="上一步" @click="current--">
+            <el-icon><ArrowUp /></el-icon>
+          </el-button>
+          <span class="muted num">{{ current + 1 }} / {{ steps.length }}</span>
+          <el-button
+            size="small"
+            circle
+            :disabled="current >= steps.length - 1"
+            aria-label="下一步"
+            @click="current++"
+          >
+            <el-icon><ArrowDown /></el-icon>
+          </el-button>
         </span>
       </div>
-      <div class="trace block">
+      <div class="trace">
         <ol class="steps">
           <li
             v-for="(s, i) in steps"
             :key="`${s.seq}-${s.file}-${s.line}`"
-            :class="{ active: i === current }"
+            :class="{ active: i === current, last: i === steps.length - 1 }"
+            tabindex="0"
             @click="current = i"
+            @keydown.enter="current = i"
           >
-            <span class="num">{{ i + 1 }}</span>
+            <span class="rail"><span class="node">{{ i + 1 }}</span></span>
             <div class="body">
+              <div class="step-top">
+                <span :class="['role', stepRole(i)]">{{ stepRole(i) }}</span>
+                <span class="loc mono">{{ s.file }}:{{ s.line }}</span>
+              </div>
               <div class="note">{{ s.note }}</div>
-              <div class="loc">{{ s.file }}:{{ s.line }}</div>
               <code v-if="s.snippet" class="snippet">{{ s.snippet }}</code>
             </div>
           </li>
         </ol>
         <div class="code">
-          <div v-if="step" class="file">{{ step.file }}</div>
+          <div v-if="step" class="file mono">
+            <el-icon><Document /></el-icon>
+            {{ step.file }}
+          </div>
           <el-alert v-if="source?.error" :title="source.error" type="warning" :closable="false" show-icon />
           <CodeViewer
             v-else-if="source?.content !== undefined && step"
@@ -217,32 +270,39 @@ const evidenceHint = computed(() => {
             :reveal="step.line"
             height="380px"
           />
-          <div v-else class="code-loading" v-loading="true" />
+          <div v-else v-loading="true" class="code-loading" />
         </div>
       </div>
 
       <div class="section-title"><span>验证证据</span></div>
-      <el-empty v-if="!detail.evidence.length" :image-size="56" :description="evidenceHint" />
-      <div v-for="ev in detail.evidence" :key="ev.id" class="evidence block">
-        <el-alert
-          :type="ev.hit ? 'success' : 'info'"
-          :closable="false"
-          show-icon
-          :title="ev.hit ? `命中特征：${ev.matched}` : `未命中：${ev.matched ?? '响应中未出现命中特征'}`"
-          :description="`验证时间 ${formatTime(ev.created_at)}`"
-        />
+      <div v-if="!detail.evidence.length" class="no-evidence">
+        <el-icon><InfoFilled /></el-icon>
+        {{ evidenceHint }}
+      </div>
+      <div v-for="ev in detail.evidence" :key="ev.id" :class="['evidence', { hit: ev.hit }]">
+        <div class="ev-head">
+          <span class="ev-icon">
+            <el-icon><component :is="ev.hit ? 'CircleCheckFilled' : 'RemoveFilled'" /></el-icon>
+          </span>
+          <div class="ev-text">
+            <b>{{ ev.hit ? '命中特征' : '未命中' }}</b>
+            <code v-if="ev.hit" class="marker">{{ ev.matched }}</code>
+            <span v-else>{{ ev.matched ?? '响应中未出现命中特征' }}</span>
+          </div>
+          <span class="muted">{{ formatTime(ev.created_at) }}</span>
+        </div>
         <el-tabs class="raw-tabs">
           <el-tab-pane label="请求原文">
-            <pre class="raw">{{ clip(ev.request_raw) }}</pre>
+            <pre class="term raw">{{ clip(ev.request_raw) }}</pre>
           </el-tab-pane>
           <el-tab-pane label="响应原文">
-            <pre class="raw">{{ clip(ev.response_raw) }}</pre>
+            <pre class="term raw"><template v-for="(part, i) in highlight(ev.response_raw, ev.matched, ev.hit)" :key="i"><mark v-if="part.mark">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template></pre>
           </el-tab-pane>
           <el-tab-pane label="验证用例">
-            <pre class="raw">{{ caseText(ev) }}</pre>
+            <pre class="term raw">{{ caseText(ev) }}</pre>
             <template v-if="replayText(ev)">
               <div class="muted replay-label">在沙箱容器内重放：</div>
-              <pre class="raw">{{ replayText(ev) }}</pre>
+              <pre class="term raw">{{ replayText(ev) }}</pre>
             </template>
           </el-tab-pane>
         </el-tabs>
@@ -251,7 +311,7 @@ const evidenceHint = computed(() => {
       <!-- 只为已验证漏洞生成补丁（FR-012） -->
       <template v-if="detail.status === 'verified'">
         <div class="section-title"><span>修复补丁</span></div>
-        <PatchPanel :finding-id="detail.id" :revision="revision" class="block" />
+        <PatchPanel :finding-id="detail.id" :revision="revision" />
       </template>
     </template>
   </div>
@@ -266,54 +326,229 @@ const evidenceHint = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.head .title {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.5;
-}
-
-.head .code {
-  color: var(--app-text-muted);
-  font-weight: 400;
-  margin-right: 6px;
-}
-
-.tags {
-  display: flex;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.block {
+  gap: 16px;
   margin-bottom: 16px;
 }
 
-.muted {
-  color: var(--app-text-muted);
-  font-size: 12px;
+.head-main {
+  min-width: 0;
 }
 
-.vector {
-  margin-left: 8px;
-  font-size: 12px;
+.head-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  font-size: 12.5px;
+}
+
+.code {
+  color: var(--app-text-muted);
+}
+
+.group-tag {
+  --c: var(--app-text-muted);
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+}
+
+.group-tag.verified {
+  --c: var(--app-danger);
+}
+
+.group-tag.unverified {
+  --c: var(--app-warning);
+}
+
+.cat {
+  color: var(--app-text-secondary);
+}
+
+.title {
+  margin: 6px 0 0;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.45;
   word-break: break-all;
 }
 
-.reason {
-  margin-left: 8px;
-  line-height: 1.6;
+.score-card {
+  --c: var(--sev-info);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 84px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--c) 9%, var(--app-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 25%, transparent);
 }
 
-.section-title {
+.score-card b {
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 750;
+  color: var(--c);
+}
+
+.score-card.sev-critical {
+  --c: var(--sev-critical);
+}
+
+.score-card.sev-high {
+  --c: var(--sev-high);
+}
+
+.score-card.sev-medium {
+  --c: var(--sev-medium);
+}
+
+.score-card.sev-low {
+  --c: var(--sev-low);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.fact,
+.vector,
+.judge {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--app-surface-alt);
+  border: 1px solid var(--app-border);
+}
+
+.fact {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fact-label {
+  font-size: 12px;
+  color: var(--app-text-muted);
+}
+
+.fact-value {
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.route {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  margin: 4px 0 10px;
+  gap: 4px 8px;
+}
+
+.method {
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  font-family: var(--app-font-mono);
+  color: var(--app-primary);
+  background: var(--app-primary-soft);
+}
+
+.access {
+  font-size: 12px;
+  color: var(--app-text-muted);
+}
+
+.vector {
+  margin-bottom: 10px;
+}
+
+.vector-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+
+.vector-raw {
+  font-size: 11.5px;
+  color: var(--app-text-muted);
+  word-break: break-all;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+}
+
+.metric.risky {
+  border-color: color-mix(in srgb, var(--app-danger) 35%, var(--app-border));
+  background: color-mix(in srgb, var(--app-danger) 6%, var(--app-surface));
+}
+
+.m-label {
+  font-size: 11.5px;
+  color: var(--app-text-muted);
+}
+
+.metric b {
+  font-size: 13px;
+}
+
+.metric.risky b {
+  color: var(--app-danger);
+}
+
+.judge {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.judge p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--app-text-secondary);
+}
+
+.judge-tag {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 600;
+  color: var(--app-text-secondary);
+  background: var(--app-surface-sunken);
+}
+
+.judge-tag.model {
+  color: var(--app-primary);
+  background: var(--app-primary-soft);
 }
 
 .nav {
@@ -325,110 +560,242 @@ const evidenceHint = computed(() => {
 
 .trace {
   display: grid;
-  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
-  gap: 12px;
-}
-
-@media (max-width: 900px) {
-  .trace {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  grid-template-columns: minmax(220px, 290px) minmax(0, 1fr);
+  gap: 14px;
 }
 
 .steps {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 404px;
+  max-height: 412px;
   overflow-y: auto;
 }
 
 .steps li {
   display: flex;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid var(--app-border);
-  border-radius: 4px;
-  margin-bottom: 6px;
+  gap: 10px;
   cursor: pointer;
+  outline: none;
 }
 
-.steps li.active {
-  border-color: #e6a23c;
-  background: #fdf6ec;
-}
-
-.num {
+.rail {
+  position: relative;
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #909399;
-  color: #fff;
-  font-size: 12px;
-  line-height: 20px;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  width: 24px;
 }
 
-.steps li.active .num {
-  background: #e6a23c;
+/* 步骤之间的竖线 */
+.rail::after {
+  content: '';
+  position: absolute;
+  top: 26px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--app-border);
+}
+
+.steps li.last .rail::after {
+  display: none;
+}
+
+.node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--app-text-secondary);
+  background: var(--app-surface);
+  box-shadow: inset 0 0 0 1.5px var(--app-border-strong);
+}
+
+.steps li.active .node {
+  color: #fff;
+  background: var(--app-warning);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--app-warning) 22%, transparent);
 }
 
 .body {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.steps li:hover .body {
+  background: var(--app-surface-alt);
+}
+
+.steps li.active .body {
+  border-color: color-mix(in srgb, var(--app-warning) 45%, transparent);
+  background: var(--app-warning-soft);
+}
+
+.steps li:focus-visible .body {
+  outline: 2px solid var(--app-primary);
+}
+
+.step-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
 }
 
-.note {
-  font-size: 13px;
-  line-height: 1.4;
+.role {
+  flex-shrink: 0;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  color: var(--app-text-secondary);
+  background: var(--app-surface-sunken);
+}
+
+.role.来源 {
+  color: var(--app-primary);
+  background: var(--app-primary-soft);
+}
+
+.role.触发 {
+  color: var(--app-danger);
+  background: var(--app-danger-soft);
 }
 
 .loc {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--app-text-muted);
-  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .snippet {
   display: block;
   margin-top: 4px;
-  font-size: 12px;
+  font-size: 11.5px;
   white-space: pre-wrap;
   word-break: break-all;
-  color: #606266;
+  color: var(--app-text-secondary);
 }
 
 .code .file {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   color: var(--app-text-muted);
-  margin-bottom: 4px;
-  font-family: Consolas, 'Cascadia Mono', monospace;
+  margin-bottom: 6px;
 }
 
 .code-loading {
   height: 380px;
 }
 
+.no-evidence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--app-text-secondary);
+  background: var(--app-surface-alt);
+  border: 1px dashed var(--app-border-strong);
+}
+
+.evidence {
+  margin-bottom: 14px;
+  padding: 12px 14px 4px;
+  border-radius: 12px;
+  border: 1px solid var(--app-border);
+}
+
+.evidence.hit {
+  border-color: color-mix(in srgb, var(--app-success) 40%, var(--app-border));
+  background: linear-gradient(180deg, var(--app-success-soft), transparent 64px);
+}
+
+.ev-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ev-icon {
+  font-size: 22px;
+  color: var(--app-text-muted);
+  display: grid;
+}
+
+.evidence.hit .ev-icon {
+  color: var(--app-success);
+}
+
+.ev-text {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 0;
+  font-size: 13.5px;
+}
+
+.marker {
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--app-success);
+  background: var(--app-surface);
+  border: 1px solid color-mix(in srgb, var(--app-success) 35%, transparent);
+  word-break: break-all;
+}
+
 .raw-tabs {
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .raw {
-  margin: 0;
   max-height: 320px;
-  overflow: auto;
-  background: #1e1e1e;
-  color: #d4d4d4;
-  border-radius: 4px;
-  padding: 10px 12px;
-  font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace;
-  font-size: 12.5px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-all;
+}
+
+.raw mark {
+  padding: 0 2px;
+  border-radius: 3px;
+  color: #0f1523;
+  background: #f4d35e;
 }
 
 .replay-label {
   margin: 8px 0 4px;
+}
+
+@media (max-width: 900px) {
+  .trace,
+  .facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

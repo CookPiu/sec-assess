@@ -5,13 +5,13 @@ import { computed, nextTick, onBeforeUnmount, ref, shallowRef, useTemplateRef, w
 import { type AttackPath, type ChainData, type ChainNode, getChain } from '@/api/chain'
 import { ApiError } from '@/api/http'
 import type { TaskOut } from '@/api/tasks'
-import { SEVERITIES } from '@/utils/labels'
+import { isDark, palette } from '@/utils/theme'
 
 const props = defineProps<{ taskId: number; task: TaskOut | null }>()
 const emit = defineEmits<{ openFinding: [findingId: number] }>()
 
-const SEVERITY_COLOR = Object.fromEntries(SEVERITIES.map((s) => [s.key, s.color])) as Record<string, string>
 const DONE_STAGES = ['report_gen']
+const GRAPH_PADDING = 24
 
 const data = ref<ChainData | null>(null)
 const error = ref('')
@@ -44,7 +44,22 @@ function shorten(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text
 }
 
+/** 画布上的颜色取自当前主题；半透明填充在深色下更柔和 */
+function graphColors() {
+  const c = palette.value
+  const dark = isDark.value
+  return {
+    ...c,
+    startFill: '#2b3550',
+    startStroke: dark ? '#55618a' : '#1b2232',
+    capFill: dark ? 'rgba(116, 137, 255, 0.16)' : '#eef1ff',
+    goalFill: dark ? 'rgba(255, 102, 128, 0.16)' : '#fdebee',
+    edge: dark ? '#56617d' : '#a3abbd',
+  }
+}
+
 function nodeStyle(n: ChainNode): Record<string, unknown> {
+  const c = graphColors()
   const base = {
     labelText: n.label,
     labelPlacement: 'center',
@@ -54,20 +69,24 @@ function nodeStyle(n: ChainNode): Record<string, unknown> {
     labelMaxLines: 2,
     lineWidth: 1.5,
   }
-  if (n.kind === 'start') return { ...base, size: 72, fill: '#606266', stroke: '#303133', labelFill: '#fff' }
-  if (n.kind === 'goal') return { ...base, size: [104, 44], radius: 22, fill: '#fef0f0', stroke: '#f56c6c', labelFill: '#c45656' }
+  if (n.kind === 'start') return { ...base, size: 72, fill: c.startFill, stroke: c.startStroke, labelFill: '#fff' }
+  if (n.kind === 'goal')
+    return { ...base, size: [104, 44], radius: 22, fill: c.goalFill, stroke: c.danger, labelFill: c.danger, lineWidth: 2 }
   if (n.kind === 'capability')
-    return { ...base, size: [112, 40], radius: 6, fill: '#ecf5ff', stroke: '#409eff', labelFill: '#337ecc', lineDash: [4, 3] }
-  const color = SEVERITY_COLOR[n.severity ?? ''] ?? '#909399'
+    return { ...base, size: [112, 40], radius: 8, fill: c.capFill, stroke: c.primary, labelFill: c.primary, lineDash: [4, 3] }
+  const color = c.severity[(n.severity ?? 'info') as keyof typeof c.severity] ?? c.muted
   return {
     ...base,
     size: [176, 52],
-    radius: 6,
-    fill: '#fff',
+    radius: 8,
+    fill: c.surface,
     stroke: color,
     lineWidth: 2,
+    shadowColor: color,
+    shadowBlur: 6,
+    shadowOpacity: 0.25,
     labelText: n.route ? `${n.label}\n${shorten(n.route.path, 26)}` : n.label,
-    labelFill: '#303133',
+    labelFill: c.text,
     labelMaxWidth: 164,
     cursor: 'pointer',
   }
@@ -110,28 +129,30 @@ async function draw(): Promise<void> {
   destroyGraph()
   const d = data.value
   if (!d?.nodes.length || !container.value) return
+  const c = graphColors()
   const g = new Graph({
     container: container.value,
     // 关闭动画：渲染结束时元素位置即为最终位置，随后的适配与居中才能按实际边界计算
     animation: false,
-    padding: 24,
+    padding: GRAPH_PADDING,
     data: toGraphData(d),
     node: {
       state: {
-        active: { lineWidth: 3, shadowColor: '#e6a23c', shadowBlur: 12 },
+        active: { lineWidth: 3, shadowColor: c.warning, shadowBlur: 14, shadowOpacity: 0.6 },
         inactive: { opacity: 0.25 },
       },
     },
     edge: {
       type: 'cubic-horizontal',
       style: {
-        stroke: '#a8abb2',
+        stroke: c.edge,
         lineWidth: 1.5,
         endArrow: true,
         labelFontSize: 11,
-        labelFill: '#606266',
+        labelFill: c.textSecondary,
         labelBackground: true,
-        labelBackgroundFill: '#fff',
+        labelBackgroundFill: c.surface,
+        labelBackgroundRadius: 4,
         labelBackgroundOpacity: 0.9,
         labelPadding: [1, 4],
         labelAutoRotate: false,
@@ -141,7 +162,7 @@ async function draw(): Promise<void> {
         labelMaxLines: 2,
       },
       state: {
-        active: { stroke: '#e6a23c', lineWidth: 2.5, labelFill: '#b88230' },
+        active: { stroke: c.warning, lineWidth: 2.5, labelFill: c.warning },
         inactive: { opacity: 0.15 },
       },
     },
@@ -261,6 +282,11 @@ watch(() => [props.taskId, chainDone.value, props.task?.status], load, { immedia
 
 onBeforeUnmount(destroyGraph)
 
+// 切换明暗主题时按新配色重画
+watch(isDark, () => {
+  if (data.value?.nodes.length) void nextTick().then(draw)
+})
+
 function pathText(p: AttackPath): string {
   return p.node_ids
     .slice(1)
@@ -277,7 +303,12 @@ async function fit(): Promise<void> {
   const g = graph.value
   if (!g) return
   await g.zoomTo(1, false)
-  await g.fitView({ when: 'overflow' }, false)
+  // fitView 的 when: 'overflow' 在 G6 5.1 中不生效，这里按内容边界与画布尺寸自行判断
+  const [width, height] = g.getSize()
+  const { min, max } = g.getCanvas().getBounds()
+  if (max[0] - min[0] + GRAPH_PADDING * 2 > width || max[1] - min[1] + GRAPH_PADDING * 2 > height) {
+    await g.fitView(undefined, false)
+  }
   await g.fitCenter(false)
 }
 </script>
@@ -352,30 +383,35 @@ async function fit(): Promise<void> {
 }
 
 .canvas-wrap {
+  overflow: hidden;
   border: 1px solid var(--app-border);
-  border-radius: 4px;
-  background: #fafbfc;
+  border-radius: var(--app-radius);
+  background-color: var(--app-surface-alt);
+  /* 点阵底纹 */
+  background-image: radial-gradient(circle, var(--app-border-strong) 1px, transparent 1.2px);
+  background-size: 18px 18px;
 }
 
 .canvas {
-  height: 460px;
+  height: 480px;
 }
 
 .legend {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
-  padding: 6px 12px;
+  gap: 8px 16px;
+  padding: 8px 14px;
   border-top: 1px solid var(--app-border);
+  background: var(--app-surface);
   font-size: 12px;
-  color: #606266;
+  color: var(--app-text-secondary);
 }
 
 .legend span {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .legend .el-button {
@@ -391,34 +427,35 @@ async function fit(): Promise<void> {
 }
 
 .dot.start {
-  background: #606266;
-  border-color: #303133;
+  background: #2b3550;
+  border-color: #1b2232;
   border-radius: 50%;
 }
 
 .dot.finding {
-  background: #fff;
-  border-color: #f56c6c;
+  background: var(--app-surface);
+  border-color: var(--sev-high);
 }
 
 .dot.capability {
-  background: #ecf5ff;
-  border-color: #409eff;
+  background: var(--app-primary-soft);
+  border-color: var(--app-primary);
   border-style: dashed;
 }
 
 .dot.goal {
-  background: #fef0f0;
-  border-color: #f56c6c;
+  background: var(--app-danger-soft);
+  border-color: var(--app-danger);
   border-radius: 6px;
 }
 
 .paths-head {
-  font-weight: 600;
-  margin: 16px 0 10px;
   display: flex;
   align-items: baseline;
   gap: 8px;
+  margin: 20px 0 12px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .muted {
@@ -433,58 +470,25 @@ async function fit(): Promise<void> {
   padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: 8px;
+  gap: 10px;
 }
 
 .paths li {
+  padding: 10px 12px;
   border: 1px solid var(--app-border);
-  border-radius: 4px;
-  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--app-surface);
   cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
-.path-detail {
-  margin-top: 12px;
-  padding: 4px 14px 12px;
-  border: 1px solid #f3d19e;
-  border-radius: 4px;
-  background: #fdf6ec;
-}
-
-.steps {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-}
-
-.steps li {
-  display: flex;
-  gap: 8px;
-  padding: 4px 0;
-  font-size: 13px;
-}
-
-.num {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #e6a23c;
-  color: #fff;
-  font-size: 12px;
-  line-height: 20px;
-  text-align: center;
-}
-
-.via {
-  color: #606266;
-  font-size: 12.5px;
-  line-height: 1.5;
+.paths li:hover {
+  border-color: var(--app-border-strong);
 }
 
 .paths li.active {
-  border-color: #e6a23c;
-  background: #fdf6ec;
+  border-color: var(--app-warning);
+  background: var(--app-warning-soft);
 }
 
 .path-title {
@@ -496,23 +500,89 @@ async function fit(): Promise<void> {
 }
 
 .path-nodes {
-  margin-top: 4px;
+  margin-top: 6px;
   font-size: 12.5px;
-  color: #606266;
+  color: var(--app-text-secondary);
+  line-height: 1.55;
+}
+
+.path-detail {
+  margin-top: 14px;
+  padding: 6px 18px 16px;
+  border: 1px solid color-mix(in srgb, var(--app-warning) 40%, var(--app-border));
+  border-radius: var(--app-radius);
+  background: linear-gradient(180deg, var(--app-warning-soft), var(--app-surface) 120px);
+}
+
+.steps {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.steps li {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+/* 步骤之间的竖线 */
+.steps li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 27px;
+  bottom: -5px;
+  width: 2px;
+  background: color-mix(in srgb, var(--app-warning) 35%, transparent);
+}
+
+.num {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--app-warning);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+}
+
+.via {
+  color: var(--app-text-secondary);
+  font-size: 12.5px;
   line-height: 1.5;
 }
 
 .label {
-  margin-top: 8px;
+  margin-top: 12px;
   font-size: 12px;
   font-weight: 600;
-  color: #606266;
+  color: var(--app-text-muted);
 }
 
 .paths p {
-  margin: 2px 0 0;
+  margin: 4px 0 0;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.7;
+}
+
+.path-detail p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 767px) {
+  .canvas {
+    height: 360px;
+  }
 }
 </style>
 
@@ -521,10 +591,10 @@ async function fit(): Promise<void> {
   max-width: 280px;
   font-size: 12px;
   line-height: 1.5;
-  color: #303133;
+  color: var(--app-text);
 }
 
 .graph-tip span {
-  color: #909399;
+  color: var(--app-text-muted);
 }
 </style>

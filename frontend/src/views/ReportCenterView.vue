@@ -9,6 +9,9 @@ import { useAuthStore } from '@/stores/auth'
 import { formatTime } from '@/utils/format'
 import { LEVEL_META } from '@/utils/labels'
 
+/** 综合安全等级对应的颜色类名 */
+const LEVEL_CLASS: Record<string, string> = { 极高危: 'critical', 高危: 'high', 中危: 'medium', 安全: 'safe' }
+
 const FORMATS: { key: ReportFormat; label: string }[] = [
   { key: 'md', label: 'Markdown' },
   { key: 'html', label: 'HTML' },
@@ -91,7 +94,12 @@ async function doExport(format: ReportFormat): Promise<void> {
 
 <template>
   <div class="page">
-    <h2 class="page-title">报告中心</h2>
+    <div class="page-head">
+      <div>
+        <h2 class="page-title">报告中心</h2>
+        <p class="page-desc">已完成评估的结构化报告，可导出 Markdown、HTML 与 PDF</p>
+      </div>
+    </div>
     <el-row :gutter="16">
       <el-col :xs="24" :lg="7" class="block">
         <el-card shadow="never" class="fill">
@@ -108,13 +116,18 @@ async function doExport(format: ReportFormat): Promise<void> {
                 @click="select(item.task_id)"
                 @keydown.enter="select(item.task_id)"
               >
-                <div class="row">
-                  <span class="name">{{ item.project_name }}</span>
-                  <el-tag size="small" :type="LEVEL_META[item.level].tag" :effect="LEVEL_META[item.level].effect">
-                    {{ item.level }}
-                  </el-tag>
+                <span :class="['score', LEVEL_CLASS[item.level]]" :title="`安全评分 ${item.score}`">
+                  <b class="num">{{ item.score }}</b>
+                </span>
+                <div class="info">
+                  <div class="row">
+                    <span class="name">{{ item.project_name }}</span>
+                    <el-tag size="small" :type="LEVEL_META[item.level].tag" :effect="LEVEL_META[item.level].effect">
+                      {{ item.level }}
+                    </el-tag>
+                  </div>
+                  <div class="sub">任务 #{{ item.task_id }} · {{ formatTime(item.finished_at) }}</div>
                 </div>
-                <div class="sub">任务 #{{ item.task_id }} · {{ formatTime(item.finished_at) }} · 评分 {{ item.score }}</div>
               </li>
             </ul>
           </div>
@@ -172,10 +185,53 @@ async function doExport(format: ReportFormat): Promise<void> {
 }
 
 .list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 10px;
+  border: 1px solid transparent;
   cursor: pointer;
   outline: none;
+}
+
+.score {
+  --c: var(--app-text-muted);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 10%, var(--app-surface));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--c) 45%, transparent);
+}
+
+.score b {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.score.critical {
+  --c: var(--sev-critical);
+}
+
+.score.high {
+  --c: var(--sev-high);
+}
+
+.score.medium {
+  --c: var(--sev-medium);
+}
+
+.score.safe {
+  --c: var(--app-success);
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
 }
 
 .list li + li {
@@ -188,7 +244,8 @@ async function doExport(format: ReportFormat): Promise<void> {
 }
 
 .list li.active {
-  background: var(--el-color-primary-light-9);
+  border-color: color-mix(in srgb, var(--app-primary) 40%, transparent);
+  background: var(--app-primary-soft);
 }
 
 .row {
@@ -242,7 +299,8 @@ async function doExport(format: ReportFormat): Promise<void> {
   width: 100%;
   height: max(480px, calc(100vh - 260px));
   border: 1px solid var(--app-border);
-  border-radius: 6px;
+  border-radius: var(--app-radius-sm);
+  /* 报告按打印版式渲染，在深色界面下也保持白底 */
   background: #ffffff;
 }
 </style>

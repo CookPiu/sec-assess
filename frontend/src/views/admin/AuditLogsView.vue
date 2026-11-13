@@ -183,7 +183,12 @@ watch([action, username, page], () => void load(), { immediate: true })
 
 <template>
   <div class="page">
-    <h2 class="page-title">审计日志</h2>
+    <div class="page-head">
+      <div>
+        <h2 class="page-title">审计日志</h2>
+        <p class="page-desc">记录登录、新建与停止评估、采纳补丁、导出报告和修改配置</p>
+      </div>
+    </div>
     <el-card shadow="never">
       <div class="toolbar">
         <el-select

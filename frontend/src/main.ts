@@ -1,5 +1,8 @@
 import 'element-plus/dist/index.css'
+import 'element-plus/theme-chalk/dark/css-vars.css'
 import './styles.css'
+// 在挂载前按保存的主题设置 html.dark，避免首屏闪烁
+import '@/utils/theme'
 
 import * as ElementPlusIcons from '@element-plus/icons-vue'
 import ElementPlus from 'element-plus'
