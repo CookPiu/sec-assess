@@ -1,3 +1,4 @@
+import type { Access, FindingBrief } from '@/api/findings'
 import type { Severity, StageKey, TaskStatus } from '@/api/tasks'
 
 export const STAGES: { key: StageKey; label: string }[] = [
@@ -28,3 +29,46 @@ export const SEVERITIES: { key: Severity; label: string; color: string }[] = [
   { key: 'medium', label: '中危', color: '#e6a23c' },
   { key: 'low', label: '低危', color: '#409eff' },
 ]
+
+export const SEVERITY_META: Record<Severity, { label: string; tag: TagType }> = {
+  critical: { label: '严重', tag: 'danger' },
+  high: { label: '高危', tag: 'danger' },
+  medium: { label: '中危', tag: 'warning' },
+  low: { label: '低危', tag: 'primary' },
+  info: { label: '信息', tag: 'info' },
+}
+
+export const CATEGORY_LABELS: Record<string, string> = {
+  sql_injection: 'SQL 注入',
+  command_injection: '命令注入',
+  template_injection: '模板注入',
+  deserialization: '不安全的反序列化',
+  path_traversal: '文件上传 / 路径穿越',
+  idor: '越权访问',
+  missing_auth: '缺失鉴权',
+  debug_mode: '调试模式开启',
+  config_exposure: '配置暴露',
+  hardcoded_secret: '硬编码密钥',
+  weak_password_storage: '弱密码存储',
+}
+
+export const ACCESS_LABELS: Record<Access, string> = { anonymous: '匿名', user: '普通用户', admin: '管理员' }
+
+export type FindingGroup = 'verified' | 'unverified' | 'false_positive'
+
+export const FINDING_GROUPS: { key: FindingGroup; label: string; tag: TagType }[] = [
+  { key: 'verified', label: '已验证', tag: 'danger' },
+  { key: 'unverified', label: '疑似', tag: 'warning' },
+  { key: 'false_positive', label: '模型判定误报', tag: 'info' },
+]
+
+export const FINDING_GROUP_META = Object.fromEntries(FINDING_GROUPS.map((g) => [g.key, g])) as Record<
+  FindingGroup,
+  (typeof FINDING_GROUPS)[number]
+>
+
+/** 模型判定误报优先于验证状态：误报不进动态验证，始终是 unverified */
+export function findingGroup(f: Pick<FindingBrief, 'status' | 'model_false_positive'>): FindingGroup {
+  if (f.model_false_positive) return 'false_positive'
+  return f.status === 'verified' ? 'verified' : 'unverified'
+}

@@ -44,9 +44,9 @@
 
 ## US2 复核漏洞证据（P1）
 
-- [ ] T032 漏洞查询接口：列表、详情、污点步骤、证据、源码文件内容（backend/app/api/findings.py）FR-017
-- [ ] T033 [P] 工作台漏洞列表：CVSS、分类、验证状态，Verified、Unverified、模型判定误报分组显示（frontend/src/views/workbench/FindingList.vue）FR-017
-- [ ] T034 漏洞详情：Monaco 定位触发行、污点步骤逐步高亮、请求与响应报文与命中特征（frontend/src/views/workbench/FindingDetail.vue）FR-017
+- [x] T032 漏洞查询接口：列表、详情、污点步骤、证据、源码文件内容（backend/app/api/findings.py）FR-017
+- [x] T033 [P] 工作台漏洞列表：CVSS、分类、验证状态，Verified、Unverified、模型判定误报分组显示（frontend/src/views/workbench/FindingList.vue）FR-017
+- [x] T034 漏洞详情：Monaco 定位触发行、污点步骤逐步高亮、请求与响应报文与命中特征（frontend/src/views/workbench/FindingDetail.vue）FR-017
 
 ## US3 查看多步攻击路径（P1）
 

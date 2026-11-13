@@ -8,12 +8,17 @@ import { stopTask, type TaskOut } from '@/api/tasks'
 import { useAuthStore } from '@/stores/auth'
 import { formatDuration, formatTime } from '@/utils/format'
 import { STATUS_META } from '@/utils/labels'
+import FindingDetail from '@/views/workbench/FindingDetail.vue'
+import FindingList from '@/views/workbench/FindingList.vue'
 import MonitorPanel from '@/views/workbench/MonitorPanel.vue'
 
 const route = useRoute()
 const auth = useAuthStore()
 const task = ref<TaskOut | null>(null)
 const stopping = ref(false)
+const selectedFinding = ref<number | null>(null)
+// 阶段或任务状态变化时漏洞数据可能已更新，用于通知详情面板重新拉取
+const revision = computed(() => `${task.value?.status}:${task.value?.current_stage}`)
 
 const taskId = computed(() => Number(route.params.taskId))
 const canStop = computed(
@@ -78,6 +83,21 @@ async function stop(): Promise<void> {
     </div>
 
     <MonitorPanel v-model:task="task" :task-id="taskId" />
+
+    <el-row :gutter="16">
+      <el-col :xs="24" :lg="9" class="block">
+        <el-card shadow="never" class="fill">
+          <template #header>漏洞列表</template>
+          <FindingList v-model:selected="selectedFinding" :task-id="taskId" :task="task" />
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :lg="15" class="block">
+        <el-card shadow="never" class="fill">
+          <template #header>漏洞详情</template>
+          <FindingDetail :task-id="taskId" :finding-id="selectedFinding" :revision="revision" />
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -100,5 +120,13 @@ async function stop(): Promise<void> {
 .meta {
   font-size: 13px;
   color: var(--app-text-muted);
+}
+
+.block {
+  margin-bottom: 16px;
+}
+
+.fill {
+  height: 100%;
 }
 </style>

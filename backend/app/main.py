@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
-from app.api import audit, auth, events, projects, tasks
+from app.api import audit, auth, events, findings, projects, tasks
 from app.core.auth import seed_users
 from app.core.config import get_settings
 from app.core.db import dispose_engine, init_db, session_factory, setup_engine
@@ -42,6 +42,7 @@ app.include_router(audit.router)
 app.include_router(projects.router)
 app.include_router(tasks.router)
 app.include_router(events.router)
+app.include_router(findings.router)
 
 
 @app.get("/api/health")
