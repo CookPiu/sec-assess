@@ -120,7 +120,7 @@ export const SETTING_META: Record<SettingKey, { label: string; unit?: string }> 
 /** 配置项的值按页面上的写法显示，例如 1024 MB、已开启 */
 export function formatSettingValue(key: string, value: unknown): string {
   if (typeof value === 'boolean') return value ? '已开启' : '已关闭'
-  if (value === null || value === undefined || value === '') return '空'
+  if (value === null || value === undefined || value === '') return '未填写'
   const unit = SETTING_META[key as SettingKey]?.unit
   return unit ? `${value} ${unit}` : String(value)
 }

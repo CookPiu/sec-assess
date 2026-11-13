@@ -110,7 +110,8 @@ function isDirty(key: EditableKey): boolean {
 }
 
 function defaultHint(key: EditableKey): string {
-  return data.value ? `默认 ${formatSettingValue(key, data.value.defaults[key])}。` : ''
+  const value = data.value?.defaults[key]
+  return value === undefined || value === '' ? '' : `默认 ${formatSettingValue(key, value)}。`
 }
 
 function apply(out: SettingsOut): void {

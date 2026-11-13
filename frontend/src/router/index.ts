@@ -92,7 +92,9 @@ router.beforeEach(async (to) => {
   return true
 })
 
-router.afterEach((to) => {
+router.afterEach((to, _from, failure) => {
+  // 导航被取消（例如配置页有未保存的修改时选择留下）时标题保持不变
+  if (failure) return
   document.title = to.meta.title ? `${to.meta.title} - 自动化安全评估系统` : '自动化安全评估系统'
 })
 
