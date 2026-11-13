@@ -5,7 +5,7 @@
 ## 准备
 
 - [x] T001 后端工程骨架：uv 项目（Python 3.12）、FastAPI 入口、`.env` 与配置读取、`.env.example` 占位（backend/pyproject.toml、backend/app/main.py、backend/app/core/config.py、.env.example）C-004 C-005
-- [ ] T002 [P] 前端工程骨架：Vite + Vue 3 + TypeScript + Element Plus + Pinia、路由、请求封装（frontend/）D-010
+- [x] T002 [P] 前端工程骨架：Vite + Vue 3 + TypeScript + Element Plus + Pinia、路由、请求封装（frontend/）D-010
 - [x] T003 [P] `.gitignore` 与 `data/` 目录约定，忽略依赖、运行数据和 `.env`（.gitignore、data/）C-005 C-007
 
 ## 公共基础
@@ -21,7 +21,7 @@
 - [x] T012 [P] 大模型客户端：DeepSeek OpenAI 兼容接口、超时、总开关、只接收代码片段（backend/app/core/llm.py）D-011
 - [ ] T013 [P] 电商靶场 shop-admin：S1–S9、诱饵写法、种子数据（含无盐 MD5 管理员密码）（targets/shop-admin/）FR-021
 - [ ] T014 [P] 用户中心靶场 user-center：U1–U3、诱饵写法、注册与登录接口、一个预装镜像外的依赖（targets/user-center/）FR-021 SC-010
-- [ ] T015 [P] 前端登录页、按角色显示菜单、路由守卫（frontend/src/views/Login.vue、frontend/src/router/）FR-019
+- [x] T015 [P] 前端登录页、按角色显示菜单、路由守卫（frontend/src/views/LoginView.vue、frontend/src/router/）FR-019
 
 ## US1 新建评估并自动跑完流水线（P1）
 
