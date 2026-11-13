@@ -8,10 +8,12 @@ dependencies = [
     "bcrypt>=4.2.0",
     "docker>=7.1.0",
     "fastapi>=0.116.0",
+    "langgraph>=1.2.21",
     "openai>=1.60.0",
     "pydantic-settings>=2.10.1",
     "pydantic>=2.11.0",
     "pyjwt>=2.10.1",
+    "python-multipart>=0.0.33",
     "sqlalchemy[asyncio]>=2.0.41",
     "uvicorn[standard]>=0.35.0",
 ]

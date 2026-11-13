@@ -10,11 +10,12 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
-from app.api import audit, auth, events
+from app.api import audit, auth, events, projects, tasks
 from app.core.auth import seed_users
 from app.core.config import get_settings
 from app.core.db import dispose_engine, init_db, session_factory, setup_engine
 from app.core.events import bus
+from app.pipeline.runner import runner
 from app.sandbox.manager import sandbox_manager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -29,13 +30,17 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     async with session_factory()() as session:
         await seed_users(session)
     bus.bind_loop(asyncio.get_running_loop())
+    await runner.startup()
     yield
+    await runner.shutdown()
     await dispose_engine()
 
 
 app = FastAPI(title="sec-assess", lifespan=lifespan)
 app.include_router(auth.router)
 app.include_router(audit.router)
+app.include_router(projects.router)
+app.include_router(tasks.router)
 app.include_router(events.router)
 
 

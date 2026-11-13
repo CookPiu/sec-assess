@@ -77,6 +77,8 @@ recon → code_audit → poc_verify → exploit_chain → report_gen
 
 ### 5.1 环境侦察（recon）
 
+Git 项目首次评估时在本阶段浅克隆仓库（失败则任务置为 `failed`），zip 项目在上传时已同步校验并解压；源码就绪后创建任务容器并开始资源采样。
+
 确定性解析 `requirements.txt`、`pyproject.toml`、`package.json`、`pom.xml` 等，统计代码行数，用 AST 提取 Flask 路由表（URL、方法、处理函数、装饰器）。大模型只负责把结果整理成侦察摘要。
 
 同时记录后续阶段要用的事实，存为任务的侦察结果：

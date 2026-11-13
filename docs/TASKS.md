@@ -25,19 +25,19 @@
 
 ## US1 新建评估并自动跑完流水线（P1）
 
-- [ ] T016 项目接入：Git 浅克隆（只接受 HTTPS，禁用 hooks、子模块、LFS，超时与 200 MB 上限）、zip 安全解压（拒绝路径穿越和符号链接，50 MB / 200 MB 上限）、项目接口（backend/app/project/ingest.py、backend/app/api/projects.py）FR-001
-- [ ] T017 [P] 侦察：解析 requirements.txt、pyproject.toml、package.json、pom.xml，统计代码行数（backend/app/project/stack.py）FR-002
+- [x] T016 项目接入：Git 浅克隆（只接受 HTTPS，禁用 hooks、子模块、LFS，超时与 200 MB 上限）、zip 安全解压（拒绝路径穿越和符号链接，50 MB / 200 MB 上限）、项目接口（backend/app/project/ingest.py、backend/app/api/projects.py）FR-001
+- [x] T017 [P] 侦察：解析 requirements.txt、pyproject.toml、package.json、pom.xml，统计代码行数（backend/app/project/stack.py）FR-002
 - [ ] T018 侦察：Flask 路由表与侦察事实（启动方式与端口、路由访问前提、注册登录字段、密码存储方式、会话方式）（backend/app/project/flask_facts.py）FR-002
 - [ ] T019 依赖准备：宿主机 `pip download --only-binary=:all:`、wheel 缓存、容器内离线安装、回退预装版本、结果写日志（backend/app/sandbox/deps.py）FR-022 D-012
 - [ ] T020 [P] 污点引擎：跨文件函数级调用图、Source / Sink / Sanitizer 规则表、赋值与拼接及参数返回值传播、3 层限制、逐步轨迹，以两个靶场为测试集（backend/app/taint/、backend/tests/taint/）FR-006 D-003 D-018
 - [ ] T021 越权规则与敏感信息规则（硬编码密钥、调试模式、配置暴露、弱密码存储）（backend/app/taint/rules_authz.py、backend/app/taint/rules_secrets.py）FR-007
-- [ ] T022 [P] CVSS 3.1 基础分计算与各漏洞类别的默认向量（backend/app/core/cvss.py、backend/tests/test_cvss.py）FR-008 D-015
+- [x] T022 [P] CVSS 3.1 基础分计算与各漏洞类别的默认向量（backend/app/core/cvss.py、backend/tests/test_cvss.py）FR-008 D-015
 - [ ] T023 审计 Agent：大模型研判（4 路并发）、模型判定误报分组、模型不可用时回退默认向量（backend/app/pipeline/agents/audit.py）FR-008
 - [ ] T024 [P] 容器内探针执行脚本：读取用例 JSON、发往 `127.0.0.1`、返回请求与响应原文、检查 `/tmp` 标记文件（sandbox-images/probe/runner.py）D-014
 - [ ] T025 验证用例模板与命中判定：9 类探针、算式与随机名标记、测试账号自动注册（backend/app/verify/）FR-009 FR-010
 - [ ] T026 验证 Agent：启动工程副本、逐条执行用例、进程退出后重启、证据落库、未命中降级（backend/app/pipeline/agents/verify.py）FR-009 FR-010
-- [ ] T027 流水线编排：LangGraph 五阶段（exploit_chain、report_gen 先占位直通）、阶段起止落库与推送、停止与超时、排队与并发上限、后端启动时清理遗留容器与任务（backend/app/pipeline/state.py、backend/app/pipeline/graph.py、backend/app/pipeline/runner.py）FR-004 FR-005 D-004 D-019
-- [ ] T028 任务接口：新建（含 Docker 可用性预检）、停止、查询，研发人员无权新建与停止（backend/app/api/tasks.py）FR-004 FR-005
+- [x] T027 流水线编排：LangGraph 五阶段（exploit_chain、report_gen 先占位直通）、阶段起止落库与推送、停止与超时、排队与并发上限、后端启动时清理遗留容器与任务（backend/app/pipeline/state.py、backend/app/pipeline/graph.py、backend/app/pipeline/runner.py）FR-004 FR-005 D-004 D-019
+- [x] T028 任务接口：新建（含 Docker 可用性预检）、停止、查询，研发人员无权新建与停止（backend/app/api/tasks.py）FR-004 FR-005
 - [ ] T029 [P] 概览大盘：项目列表、全局统计图、新建评估弹窗（Git 地址 / zip 上传）（frontend/src/views/Dashboard.vue）FR-016
 - [ ] T030 [P] 工作台监控区：阶段步进器、日志滚动窗、资源曲线、停止按钮，用 fetch 读取 SSE（frontend/src/views/workbench/MonitorPanel.vue、frontend/src/api/sse.ts）FR-014 FR-017 SC-005
 - [ ] T031 US1 端到端测试：两个靶场跑到 completed，检出结果与 DESIGN.md 第 8 节清单一致、诱饵无 Verified，停止后数据保留（backend/tests/e2e/test_pipeline.py）SC-001 SC-002 SC-006 SC-010
