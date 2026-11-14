@@ -326,8 +326,10 @@ const evidenceHint = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 20px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--app-border);
 }
 
 .head-main {
@@ -338,7 +340,7 @@ const evidenceHint = computed(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 8px;
+  gap: 6px 10px;
   font-size: 12.5px;
 }
 
@@ -348,11 +350,11 @@ const evidenceHint = computed(() => {
 
 .group-tag {
   --c: var(--app-text-muted);
-  padding: 1px 8px;
-  border-radius: 6px;
+  padding: 1px 7px;
+  border-radius: 4px;
   font-weight: 600;
   color: var(--c);
-  background: color-mix(in srgb, var(--c) 12%, transparent);
+  background: color-mix(in srgb, var(--c) 10%, transparent);
 }
 
 .group-tag.verified {
@@ -368,31 +370,31 @@ const evidenceHint = computed(() => {
 }
 
 .title {
-  margin: 6px 0 0;
-  font-size: 18px;
-  font-weight: 650;
-  line-height: 1.45;
+  margin: 10px 0 0;
+  font-family: var(--app-font-display);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
   word-break: break-all;
 }
 
+/* CVSS 分数：大号数字加等级 */
 .score-card {
   --c: var(--sev-info);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  min-width: 84px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--c) 9%, var(--app-surface));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 25%, transparent);
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .score-card b {
-  font-size: 28px;
+  font-family: var(--app-font-display);
+  font-size: 40px;
   line-height: 1;
-  font-weight: 750;
+  font-weight: 500;
+  letter-spacing: -0.03em;
   color: var(--c);
 }
 
@@ -412,27 +414,25 @@ const evidenceHint = computed(() => {
   --c: var(--sev-low);
 }
 
+/* 触发位置、入口路由：两列定义表 */
 .facts {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.fact,
-.vector,
-.judge {
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--app-surface-alt);
   border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  margin-bottom: 14px;
 }
 
 .fact {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
+  padding: 12px 14px;
+}
+
+.fact + .fact {
+  border-left: 1px solid var(--app-border);
 }
 
 .fact-label {
@@ -454,7 +454,7 @@ const evidenceHint = computed(() => {
 
 .method {
   padding: 0 6px;
-  border-radius: 4px;
+  border-radius: 3px;
   font-size: 11px;
   font-weight: 700;
   line-height: 18px;
@@ -469,13 +469,14 @@ const evidenceHint = computed(() => {
 }
 
 .vector {
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
 .vector-head {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  align-items: baseline;
   gap: 4px 12px;
   margin-bottom: 8px;
 }
@@ -486,25 +487,23 @@ const evidenceHint = computed(() => {
   word-break: break-all;
 }
 
+/* 八项基础指标：表格式网格，高风险取值用红色文字和圆点 */
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  border-top: 1px solid var(--app-border);
+  border-left: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  overflow: hidden;
 }
 
 .metric {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: var(--app-surface);
-  border: 1px solid var(--app-border);
-}
-
-.metric.risky {
-  border-color: color-mix(in srgb, var(--app-danger) 35%, var(--app-border));
-  background: color-mix(in srgb, var(--app-danger) 6%, var(--app-surface));
+  gap: 2px;
+  padding: 9px 12px;
+  border-right: 1px solid var(--app-border);
+  border-bottom: 1px solid var(--app-border);
 }
 
 .m-label {
@@ -513,23 +512,39 @@ const evidenceHint = computed(() => {
 }
 
 .metric b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
+  font-weight: 600;
 }
 
 .metric.risky b {
   color: var(--app-danger);
 }
 
+.metric.risky b::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .judge {
   display: flex;
-  gap: 10px;
+  gap: 14px;
   align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface-alt);
+  border: 1px solid var(--app-border);
 }
 
 .judge p {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 13.5px;
+  line-height: 1.75;
   color: var(--app-text-secondary);
 }
 
@@ -538,17 +553,15 @@ const evidenceHint = computed(() => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 2px 0;
   font-size: 12px;
   font-weight: 600;
-  color: var(--app-text-secondary);
-  background: var(--app-surface-sunken);
+  color: var(--app-text-muted);
+  white-space: nowrap;
 }
 
 .judge-tag.model {
-  color: var(--app-primary);
-  background: var(--app-primary-soft);
+  color: var(--app-text);
 }
 
 .nav {
@@ -561,7 +574,7 @@ const evidenceHint = computed(() => {
 .trace {
   display: grid;
   grid-template-columns: minmax(220px, 290px) minmax(0, 1fr);
-  gap: 14px;
+  gap: 18px;
 }
 
 .steps {
@@ -584,17 +597,18 @@ const evidenceHint = computed(() => {
   flex-shrink: 0;
   display: flex;
   justify-content: center;
-  width: 24px;
+  width: 22px;
+  padding-top: 9px;
 }
 
 /* 步骤之间的竖线 */
 .rail::after {
   content: '';
   position: absolute;
-  top: 26px;
-  bottom: -2px;
-  width: 2px;
-  background: var(--app-border);
+  top: 33px;
+  bottom: 0;
+  width: 1px;
+  background: var(--app-border-strong);
 }
 
 .steps li.last .rail::after {
@@ -606,28 +620,29 @@ const evidenceHint = computed(() => {
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--app-text-secondary);
+  font-family: var(--app-font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--app-text-muted);
   background: var(--app-surface);
-  box-shadow: inset 0 0 0 1.5px var(--app-border-strong);
+  box-shadow: inset 0 0 0 1px var(--app-border-strong);
 }
 
 .steps li.active .node {
-  color: #fff;
-  background: var(--app-warning);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--app-warning) 22%, transparent);
+  color: var(--app-ink-contrast);
+  background: var(--app-ink);
+  box-shadow: none;
 }
 
 .body {
   flex: 1;
   min-width: 0;
   margin-bottom: 8px;
-  padding: 8px 10px;
-  border-radius: 10px;
+  padding: 8px 12px;
+  border-radius: var(--app-radius-sm);
   border: 1px solid transparent;
   transition: background-color 0.15s, border-color 0.15s;
 }
@@ -637,40 +652,35 @@ const evidenceHint = computed(() => {
 }
 
 .steps li.active .body {
-  border-color: color-mix(in srgb, var(--app-warning) 45%, transparent);
-  background: var(--app-warning-soft);
+  border-color: var(--app-border-strong);
+  background: var(--app-surface-alt);
 }
 
 .steps li:focus-visible .body {
-  outline: 2px solid var(--app-primary);
+  outline: 2px solid var(--app-ink);
 }
 
 .step-top {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
 .role {
   flex-shrink: 0;
-  padding: 0 6px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 11.5px;
+  font-weight: 600;
   line-height: 18px;
-  color: var(--app-text-secondary);
-  background: var(--app-surface-sunken);
+  color: var(--app-text-muted);
 }
 
 .role.来源 {
   color: var(--app-primary);
-  background: var(--app-primary-soft);
 }
 
 .role.触发 {
   color: var(--app-danger);
-  background: var(--app-danger-soft);
 }
 
 .loc {
@@ -684,12 +694,12 @@ const evidenceHint = computed(() => {
 .note {
   margin-top: 4px;
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .snippet {
   display: block;
-  margin-top: 4px;
+  margin-top: 6px;
   font-size: 11.5px;
   white-space: pre-wrap;
   word-break: break-all;
@@ -699,10 +709,10 @@ const evidenceHint = computed(() => {
 .code .file {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 12px;
   color: var(--app-text-muted);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .code-loading {
@@ -713,24 +723,18 @@ const evidenceHint = computed(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 14px;
-  border-radius: 10px;
+  padding: 14px 16px;
+  border-radius: var(--app-radius-sm);
   font-size: 13px;
   color: var(--app-text-secondary);
-  background: var(--app-surface-alt);
   border: 1px dashed var(--app-border-strong);
 }
 
 .evidence {
   margin-bottom: 14px;
-  padding: 12px 14px 4px;
-  border-radius: 12px;
+  padding: 14px 16px 6px;
+  border-radius: var(--app-radius-sm);
   border: 1px solid var(--app-border);
-}
-
-.evidence.hit {
-  border-color: color-mix(in srgb, var(--app-success) 40%, var(--app-border));
-  background: linear-gradient(180deg, var(--app-success-soft), transparent 64px);
 }
 
 .ev-head {
@@ -740,7 +744,7 @@ const evidenceHint = computed(() => {
 }
 
 .ev-icon {
-  font-size: 22px;
+  font-size: 20px;
   color: var(--app-text-muted);
   display: grid;
 }
@@ -760,12 +764,11 @@ const evidenceHint = computed(() => {
 }
 
 .marker {
-  padding: 1px 8px;
-  border-radius: 6px;
+  padding: 1px 7px;
+  border-radius: 4px;
   font-size: 12.5px;
   color: var(--app-success);
-  background: var(--app-surface);
-  border: 1px solid color-mix(in srgb, var(--app-success) 35%, transparent);
+  background: var(--app-success-soft);
   word-break: break-all;
 }
 
@@ -779,8 +782,8 @@ const evidenceHint = computed(() => {
 
 .raw mark {
   padding: 0 2px;
-  border-radius: 3px;
-  color: #0f1523;
+  border-radius: 2px;
+  color: #141414;
   background: #f4d35e;
 }
 
@@ -792,6 +795,11 @@ const evidenceHint = computed(() => {
   .trace,
   .facts {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fact + .fact {
+    border-left: 0;
+    border-top: 1px solid var(--app-border);
   }
 
   .metrics {

@@ -151,28 +151,25 @@ const emptyText = computed(() => {
   min-height: 0;
 }
 
+/* 分组：面板顶部的下划线标签 */
 .groups {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px;
-  padding: 4px;
-  margin-bottom: 12px;
-  border-radius: 10px;
-  background: var(--app-surface-sunken);
+  border-bottom: 1px solid var(--app-border);
 }
 
 .group {
   --c: var(--app-text-muted);
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 32px;
+  height: 46px;
   padding: 0 6px;
   border: 0;
-  border-radius: 7px;
   background: transparent;
-  color: var(--app-text-secondary);
+  color: var(--app-text-muted);
   font: inherit;
   font-size: 13px;
   white-space: nowrap;
@@ -190,55 +187,63 @@ const emptyText = computed(() => {
 .group b {
   min-width: 18px;
   padding: 0 5px;
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 11.5px;
+  font-weight: 600;
   line-height: 18px;
   color: var(--c);
-  background: color-mix(in srgb, var(--c) 14%, transparent);
+  background: color-mix(in srgb, var(--c) 11%, transparent);
+}
+
+.group:hover {
+  color: var(--app-text);
 }
 
 .group.on {
-  background: var(--app-surface);
   color: var(--app-text);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(17, 24, 41, 0.1);
+}
+
+.group.on::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--app-ink);
 }
 
 .group:focus-visible,
 .row:focus-visible {
-  outline: 2px solid var(--app-primary);
-  outline-offset: 1px;
+  outline: 2px solid var(--app-ink);
+  outline-offset: -2px;
 }
 
 .rows {
   flex: 1;
   min-height: 120px;
   overflow-y: auto;
-  margin: 0 -4px;
-  padding: 0 4px;
 }
 
+/* 列表行：细线分隔，左侧短竖条表示等级 */
 .row {
   --c: var(--sev-info);
   position: relative;
-  padding: 10px 12px 10px 14px;
-  margin-bottom: 6px;
-  border: 1px solid var(--app-border);
-  border-radius: 10px;
-  background: var(--app-surface);
+  padding: 14px 18px 14px 20px;
+  border-bottom: 1px solid var(--app-border);
   cursor: pointer;
-  transition: border-color 0.15s, background-color 0.15s;
+  transition: background-color 0.15s;
 }
 
-/* 左侧等级色条 */
 .row::before {
   content: '';
   position: absolute;
-  left: -1px;
-  top: 10px;
-  bottom: 10px;
+  left: 0;
+  top: 16px;
+  height: 14px;
   width: 3px;
-  border-radius: 0 3px 3px 0;
+  border-radius: 0 2px 2px 0;
   background: var(--c);
 }
 
@@ -259,12 +264,12 @@ const emptyText = computed(() => {
 }
 
 .row:hover {
-  border-color: var(--app-border-strong);
+  background: var(--app-surface-alt);
 }
 
 .row.on {
-  border-color: var(--app-primary);
-  background: var(--app-primary-soft);
+  background: var(--app-ink-soft);
+  box-shadow: inset -2px 0 0 var(--app-ink);
 }
 
 .row-top {
@@ -275,15 +280,15 @@ const emptyText = computed(() => {
 }
 
 .code {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--app-text-muted);
 }
 
 .title {
-  margin: 4px 0 2px;
+  margin: 6px 0 4px;
   font-size: 13.5px;
   font-weight: 600;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--app-text);
   word-break: break-all;
 }
@@ -298,7 +303,7 @@ const emptyText = computed(() => {
 }
 
 .empty {
-  padding: 40px 12px;
+  padding: 48px 12px;
   text-align: center;
   font-size: 13px;
   color: var(--app-text-muted);

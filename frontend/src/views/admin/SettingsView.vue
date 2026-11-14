@@ -350,12 +350,12 @@ onBeforeRouteLeave(async () => {
   align-items: flex-start;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 8px 16px;
-  margin-bottom: 16px;
+  gap: 16px 24px;
+  margin-bottom: 28px;
 }
 
 .head .page-title {
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .meta {
@@ -367,8 +367,9 @@ onBeforeRouteLeave(async () => {
 }
 
 .meta a {
-  color: var(--el-color-primary);
-  text-decoration: none;
+  color: var(--app-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .actions {

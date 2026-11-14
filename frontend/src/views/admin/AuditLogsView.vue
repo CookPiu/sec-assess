@@ -263,7 +263,7 @@ watch([action, username, page], () => void load(), { immediate: true })
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .action {
@@ -281,8 +281,14 @@ watch([action, username, page], () => void load(), { immediate: true })
 }
 
 .link {
-  color: var(--el-color-primary);
-  text-decoration: none;
+  color: var(--app-text);
+  text-decoration: underline;
+  text-decoration-color: var(--app-border-strong);
+  text-underline-offset: 3px;
+}
+
+.link:hover {
+  text-decoration-color: currentColor;
 }
 
 .lines {

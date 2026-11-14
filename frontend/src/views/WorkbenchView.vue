@@ -90,7 +90,7 @@ async function stop(): Promise<void> {
 
 <template>
   <div class="page workbench">
-    <section class="panel hero">
+    <section class="hero">
       <div class="hero-top">
         <div class="hero-title">
           <RouterLink :to="{ name: 'dashboard' }" class="back">
@@ -149,7 +149,7 @@ async function stop(): Promise<void> {
         <template #label>
           <span class="tab-label">
             <el-icon><Warning /></el-icon>漏洞
-            <span v-if="findingSummary" class="tab-count num">
+            <span v-if="findingSummary" class="count-chip">
               {{ findingSummary.verified + findingSummary.unverified }}
             </span>
           </span>
@@ -187,17 +187,15 @@ async function stop(): Promise<void> {
 
 <style scoped>
 .hero {
-  padding: 18px 22px 20px;
-  margin-bottom: 8px;
-  background-image: linear-gradient(135deg, var(--app-primary-soft), transparent 55%);
+  margin-bottom: 12px;
 }
 
 .hero-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: flex-end;
   flex-wrap: wrap;
-  gap: 16px 24px;
+  gap: 16px 32px;
 }
 
 .hero-title {
@@ -214,28 +212,29 @@ async function stop(): Promise<void> {
 }
 
 .back:hover {
-  color: var(--app-primary);
+  color: var(--app-text);
 }
 
 .hero .page-title {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px 10px;
-  margin: 6px 0;
+  gap: 6px 12px;
+  margin: 10px 0 8px;
   word-break: break-all;
 }
 
 .task-no {
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 400;
+  letter-spacing: 0;
   color: var(--app-text-muted);
 }
 
 .meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
+  gap: 4px 18px;
   font-size: 12.5px;
   color: var(--app-text-muted);
 }
@@ -243,18 +242,18 @@ async function stop(): Promise<void> {
 .meta span {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .hero-side {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 12px;
+  gap: 14px;
 }
 
 .hero-sev {
-  width: 300px;
+  width: 320px;
   max-width: 100%;
 }
 
@@ -268,48 +267,37 @@ async function stop(): Promise<void> {
 }
 
 .hero-track {
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px dashed var(--app-border);
+  margin-top: 28px;
 }
 
 .hero-error {
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .wb-tabs :deep(.el-tabs__header) {
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 
-.wb-tabs :deep(.el-tabs__nav-wrap::after) {
-  height: 1px;
-  background: var(--app-border);
+/* 标签内容区默认 overflow: hidden，会让漏洞列表的吸顶失效 */
+.wb-tabs :deep(.el-tabs__content) {
+  overflow: visible;
 }
 
 .wb-tabs :deep(.el-tabs__item) {
-  height: 46px;
+  height: 48px;
   font-size: 14.5px;
 }
 
 .tab-label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-}
-
-.tab-count {
-  padding: 0 7px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  line-height: 18px;
-  background: var(--app-surface-sunken);
-  color: var(--app-text-secondary);
+  gap: 7px;
 }
 
 .split {
   display: grid;
   grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
-  gap: 16px;
+  gap: 20px;
   align-items: start;
 }
 
@@ -319,8 +307,8 @@ async function stop(): Promise<void> {
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 32px);
-  padding: 12px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .list-panel > * {
@@ -330,11 +318,11 @@ async function stop(): Promise<void> {
 
 .detail-panel {
   min-width: 0;
-  padding: 18px 20px;
+  padding: 24px 28px 28px;
 }
 
 .graph-panel {
-  padding: 16px;
+  padding: 20px;
 }
 
 @media (max-width: 1023px) {
@@ -358,11 +346,11 @@ async function stop(): Promise<void> {
 }
 
 @media (max-width: 767px) {
-  .hero {
-    padding: 14px;
+  .detail-panel {
+    padding: 16px;
   }
 
-  .detail-panel {
+  .graph-panel {
     padding: 14px;
   }
 }

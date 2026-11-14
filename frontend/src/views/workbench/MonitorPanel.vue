@@ -228,13 +228,13 @@ const metricsOption = computed<EChartsCoreOption>(() => {
 .monitor {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
-  gap: 16px;
+  gap: 20px;
 }
 
 .head-meta {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .live {
@@ -245,8 +245,8 @@ const metricsOption = computed<EChartsCoreOption>(() => {
 }
 
 .live i {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--app-text-muted);
 }
@@ -257,7 +257,7 @@ const metricsOption = computed<EChartsCoreOption>(() => {
 
 .live.on i {
   background: var(--app-success);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-success) 25%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-success) 22%, transparent);
 }
 
 .logs-panel {
@@ -268,19 +268,19 @@ const metricsOption = computed<EChartsCoreOption>(() => {
 }
 
 .logs {
-  height: 404px;
+  height: 420px;
   overflow-y: auto;
   background: var(--app-term-bg);
   color: var(--app-term-text);
-  padding: 10px 14px;
+  padding: 12px 16px;
   font-family: var(--app-font-mono);
   font-size: 12.5px;
-  line-height: 1.75;
+  line-height: 1.8;
 }
 
 .line {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   white-space: pre-wrap;
   word-break: break-all;
 }
@@ -299,7 +299,7 @@ const metricsOption = computed<EChartsCoreOption>(() => {
 }
 
 .stage {
-  color: #8fa2ff;
+  color: var(--app-term-accent);
   flex-shrink: 0;
   min-width: 6.5em;
 }
@@ -308,21 +308,24 @@ const metricsOption = computed<EChartsCoreOption>(() => {
   color: var(--app-term-muted);
 }
 
+/* 三项读数：细线分隔的一行 */
 .gauges {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
 }
 
 .gauge {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 10px 12px;
-  border-radius: var(--app-radius-sm);
-  background: var(--app-surface-alt);
-  border: 1px solid var(--app-border);
+  gap: 4px;
+  padding: 12px 14px;
+}
+
+.gauge + .gauge {
+  border-left: 1px solid var(--app-border);
 }
 
 .g-label {
@@ -331,21 +334,24 @@ const metricsOption = computed<EChartsCoreOption>(() => {
 }
 
 .gauge b {
-  font-size: 19px;
-  font-weight: 700;
+  font-family: var(--app-font-display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
   white-space: nowrap;
 }
 
 .gauge small {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
+  letter-spacing: 0;
   color: var(--app-text-muted);
 }
 
 .meter {
-  height: 4px;
+  height: 3px;
   margin-top: 4px;
-  border-radius: 2px;
+  border-radius: 1px;
   background: var(--app-surface-sunken);
   overflow: hidden;
 }
@@ -353,7 +359,7 @@ const metricsOption = computed<EChartsCoreOption>(() => {
 .meter i {
   display: block;
   height: 100%;
-  background: var(--app-success);
+  background: var(--app-ink);
   transition: width 0.4s;
 }
 

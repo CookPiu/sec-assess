@@ -51,25 +51,27 @@ async function submit(): Promise<void> {
   <div class="login-page">
     <section class="intro">
       <div class="intro-brand">
-        <BrandMark :size="40" />
+        <BrandMark :size="30" />
         <span>自动化安全评估系统</span>
       </div>
-      <h1>源码审计、沙箱验证与攻击路径推演</h1>
-      <ol class="stages">
-        <li v-for="(s, i) in STAGES" :key="s.key">
-          <span class="idx">{{ i + 1 }}</span>
-          <div>
-            <b>{{ s.label }}</b>
-            <p>{{ STAGE_HINTS[s.key] }}</p>
-          </div>
-        </li>
-      </ol>
+      <div>
+        <h1>源码审计、沙箱验证与攻击路径推演</h1>
+        <ol class="stages">
+          <li v-for="(s, i) in STAGES" :key="s.key">
+            <span class="idx">{{ String(i + 1).padStart(2, '0') }}</span>
+            <div>
+              <b>{{ s.label }}</b>
+              <p>{{ STAGE_HINTS[s.key] }}</p>
+            </div>
+          </li>
+        </ol>
+      </div>
     </section>
 
     <section class="form-side">
       <div class="form-card">
         <div class="mobile-brand">
-          <BrandMark :size="36" />
+          <BrandMark :size="30" />
           <span>自动化安全评估系统</span>
         </div>
         <h2>登录</h2>
@@ -111,98 +113,76 @@ async function submit(): Promise<void> {
   min-height: 100%;
 }
 
+/* 左侧固定为深色，图标与文字按深色底取色 */
 .intro {
-  position: relative;
+  --app-ink: #f2f2ef;
+  --app-ink-contrast: #111111;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 28px;
-  padding: 56px clamp(32px, 6vw, 88px);
-  overflow: hidden;
-  color: #c9d1e4;
-  background-color: #0d1426;
-  /* 网格底纹加左上角的主色光晕 */
-  background-image:
-    radial-gradient(70% 60% at 0% 0%, rgba(99, 120, 255, 0.35), transparent 70%),
-    radial-gradient(50% 50% at 100% 100%, rgba(63, 207, 149, 0.16), transparent 70%),
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size:
-    auto,
-    auto,
-    32px 32px,
-    32px 32px;
+  justify-content: space-between;
+  gap: 48px;
+  padding: 48px clamp(32px, 6vw, 88px);
+  color: #a3a39e;
+  background: #111111;
 }
 
 .intro-brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: #fff;
-  letter-spacing: 0.04em;
+  color: #f2f2ef;
+  letter-spacing: 0.01em;
 }
 
 .intro h1 {
-  margin: 0;
-  max-width: 520px;
-  font-size: clamp(26px, 2.6vw, 36px);
-  line-height: 1.35;
-  font-weight: 700;
-  color: #fff;
+  margin: 0 0 40px;
+  max-width: 540px;
+  font-family: var(--app-font-display);
+  font-size: clamp(30px, 3vw, 44px);
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #f2f2ef;
 }
 
 .stages {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-width: 520px;
+  max-width: 540px;
+  border-top: 1px solid #2a2a2a;
 }
 
 .stages li {
-  position: relative;
-  display: flex;
-  gap: 14px;
-  padding-bottom: 18px;
-}
-
-.stages li:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: 13px;
-  top: 30px;
-  bottom: 2px;
-  width: 2px;
-  background: linear-gradient(rgba(139, 155, 255, 0.5), rgba(139, 155, 255, 0.1));
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #2a2a2a;
 }
 
 .idx {
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  background: rgba(99, 120, 255, 0.25);
-  box-shadow: inset 0 0 0 1.5px rgba(139, 155, 255, 0.7);
+  font-family: var(--app-font-mono);
+  font-size: 12.5px;
+  line-height: 22px;
+  color: #6f6f6a;
 }
 
 .stages b {
   display: block;
-  font-size: 15px;
-  color: #fff;
-  line-height: 28px;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 22px;
+  color: #f2f2ef;
 }
 
 .stages p {
-  margin: 0;
+  margin: 2px 0 0;
   font-size: 13px;
   line-height: 1.6;
-  color: #9aa5bf;
+  color: #8f8f8a;
 }
 
 .form-side {
@@ -215,7 +195,7 @@ async function submit(): Promise<void> {
 
 .form-card {
   width: 100%;
-  max-width: 380px;
+  max-width: 360px;
 }
 
 .mobile-brand {
@@ -224,14 +204,21 @@ async function submit(): Promise<void> {
 
 .form-card h2 {
   margin: 0;
-  font-size: 26px;
-  font-weight: 700;
+  font-family: var(--app-font-display);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .hint {
-  margin: 6px 0 28px;
+  margin: 8px 0 32px;
   font-size: 13.5px;
   color: var(--app-text-muted);
+}
+
+.form-card :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: var(--app-text);
 }
 
 .error {
@@ -241,7 +228,7 @@ async function submit(): Promise<void> {
 .submit {
   width: 100%;
   height: 44px;
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 15px;
 }
 
@@ -258,7 +245,7 @@ async function submit(): Promise<void> {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 28px;
+    margin-bottom: 32px;
     font-weight: 600;
   }
 }

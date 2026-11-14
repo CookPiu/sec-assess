@@ -1,6 +1,5 @@
 import type { AuditAction } from '@/api/audit'
 import type { Access, FindingBrief } from '@/api/findings'
-import type { SecurityLevel } from '@/api/reports'
 import type { SettingKey } from '@/api/settings'
 import type { Severity, StageKey, TaskStatus } from '@/api/tasks'
 
@@ -40,14 +39,6 @@ export const SEVERITY_META: Record<Severity, { label: string; tag: TagType }> = 
   medium: { label: '中危', tag: 'warning' },
   low: { label: '低危', tag: 'primary' },
   info: { label: '信息', tag: 'info' },
-}
-
-/** 综合安全等级的标签样式，极高危用实心红色与高危区分 */
-export const LEVEL_META: Record<SecurityLevel, { tag: TagType; effect: 'dark' | 'light' }> = {
-  极高危: { tag: 'danger', effect: 'dark' },
-  高危: { tag: 'danger', effect: 'light' },
-  中危: { tag: 'warning', effect: 'light' },
-  安全: { tag: 'success', effect: 'light' },
 }
 
 export const CATEGORY_LABELS: Record<string, string> = {

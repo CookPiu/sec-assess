@@ -7,7 +7,6 @@ import { ApiError } from '@/api/http'
 import { exportReport, getReport, listReports, type ReportBrief, type ReportFormat, type ReportOut } from '@/api/reports'
 import { useAuthStore } from '@/stores/auth'
 import { formatTime } from '@/utils/format'
-import { LEVEL_META } from '@/utils/labels'
 
 /** 综合安全等级对应的颜色类名 */
 const LEVEL_CLASS: Record<string, string> = { 极高危: 'critical', 高危: 'high', 中危: 'medium', 安全: 'safe' }
@@ -100,82 +99,92 @@ async function doExport(format: ReportFormat): Promise<void> {
         <p class="page-desc">已完成评估的结构化报告，可导出 Markdown、HTML 与 PDF</p>
       </div>
     </div>
-    <el-row :gutter="16">
-      <el-col :xs="24" :lg="7" class="block">
-        <el-card shadow="never" class="fill">
-          <template #header>已完成的评估</template>
-          <div v-loading="listLoading" class="list-wrap">
-            <el-alert v-if="listError" type="error" :title="listError" show-icon :closable="false" />
-            <el-empty v-else-if="!listLoading && !reports.length" description="还没有已完成的评估" :image-size="80" />
-            <ul v-else class="list">
-              <li
-                v-for="item in reports"
-                :key="item.task_id"
-                :class="{ active: item.task_id === selectedId }"
-                tabindex="0"
-                @click="select(item.task_id)"
-                @keydown.enter="select(item.task_id)"
-              >
-                <span :class="['score', LEVEL_CLASS[item.level]]" :title="`安全评分 ${item.score}`">
-                  <b class="num">{{ item.score }}</b>
-                </span>
-                <div class="info">
-                  <div class="row">
-                    <span class="name">{{ item.project_name }}</span>
-                    <el-tag size="small" :type="LEVEL_META[item.level].tag" :effect="LEVEL_META[item.level].effect">
-                      {{ item.level }}
-                    </el-tag>
-                  </div>
-                  <div class="sub">任务 #{{ item.task_id }} · {{ formatTime(item.finished_at) }}</div>
+    <div class="layout">
+      <section class="panel list-panel">
+        <div class="panel-head">
+          <span class="panel-title">
+            已完成的评估
+            <span v-if="reports.length" class="count-chip">{{ reports.length }}</span>
+          </span>
+        </div>
+        <div v-loading="listLoading" class="list-wrap">
+          <el-alert v-if="listError" type="error" :title="listError" show-icon :closable="false" class="list-alert" />
+          <el-empty v-else-if="!listLoading && !reports.length" description="还没有已完成的评估" :image-size="80" />
+          <ul v-else class="list">
+            <li
+              v-for="item in reports"
+              :key="item.task_id"
+              :class="{ active: item.task_id === selectedId }"
+              tabindex="0"
+              @click="select(item.task_id)"
+              @keydown.enter="select(item.task_id)"
+            >
+              <span :class="['score', LEVEL_CLASS[item.level]]" :title="`安全评分 ${item.score}`">
+                <b class="num">{{ item.score }}</b>
+              </span>
+              <div class="info">
+                <div class="row">
+                  <span class="name">{{ item.project_name }}</span>
+                  <span :class="['level', LEVEL_CLASS[item.level]]">{{ item.level }}</span>
                 </div>
-              </li>
-            </ul>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :lg="17" class="block">
-        <el-card shadow="never">
-          <template #header>
-            <div class="preview-header">
-              <span class="title">{{ report?.title ?? '报告预览' }}</span>
-              <div v-if="canExport && report" class="actions">
-                <el-button
-                  v-for="f in FORMATS"
-                  :key="f.key"
-                  size="small"
-                  :loading="exporting === f.key"
-                  :disabled="exporting !== null && exporting !== f.key"
-                  @click="doExport(f.key)"
-                >
-                  <el-icon v-if="exporting !== f.key"><Download /></el-icon>
-                  <span>{{ f.label }}</span>
-                </el-button>
+                <div class="sub">任务 #{{ item.task_id }} · {{ formatTime(item.finished_at) }}</div>
               </div>
-            </div>
-          </template>
-          <div v-loading="previewLoading" class="preview">
-            <el-alert v-if="previewError" type="error" :title="previewError" show-icon :closable="false" />
-            <el-empty v-else-if="selectedId === null" description="选择左侧的评估查看报告" :image-size="80" />
-            <!-- 报告内容来自被评估工程，iframe 不授予脚本与同源权限 -->
-            <iframe v-else-if="report" class="frame" :srcdoc="report.html" sandbox="" title="报告预览" />
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel preview-panel">
+        <div class="panel-head">
+          <span class="panel-title title">{{ report?.title ?? '报告预览' }}</span>
+          <div v-if="canExport && report" class="actions">
+            <el-button
+              v-for="f in FORMATS"
+              :key="f.key"
+              size="small"
+              :loading="exporting === f.key"
+              :disabled="exporting !== null && exporting !== f.key"
+              @click="doExport(f.key)"
+            >
+              <el-icon v-if="exporting !== f.key"><Download /></el-icon>
+              <span>{{ f.label }}</span>
+            </el-button>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </div>
+        <div v-loading="previewLoading" class="preview">
+          <el-alert v-if="previewError" type="error" :title="previewError" show-icon :closable="false" />
+          <el-empty v-else-if="selectedId === null" description="选择左侧的评估查看报告" :image-size="80" />
+          <!-- 报告内容来自被评估工程，iframe 不授予脚本与同源权限 -->
+          <iframe v-else-if="report" class="frame" :srcdoc="report.html" sandbox="" title="报告预览" />
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.block {
-  margin-bottom: 16px;
+.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
 }
 
-.fill {
-  height: 100%;
+.list-panel {
+  position: sticky;
+  top: 16px;
+  overflow: hidden;
 }
 
 .list-wrap {
   min-height: 120px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.list-alert {
+  margin: 14px;
+  width: auto;
 }
 
 .list {
@@ -185,67 +194,61 @@ async function doExport(format: ReportFormat): Promise<void> {
 }
 
 .list li {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid transparent;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--app-border);
   cursor: pointer;
   outline: none;
+  transition: background-color 0.15s;
 }
 
+.list li:hover,
+.list li:focus-visible {
+  background: var(--app-surface-alt);
+}
+
+.list li.active {
+  background: var(--app-ink-soft);
+  box-shadow: inset 2px 0 0 var(--app-ink);
+}
+
+/* 安全评分：数字按综合等级着色 */
 .score {
-  --c: var(--app-text-muted);
   flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  color: var(--c);
-  background: color-mix(in srgb, var(--c) 10%, var(--app-surface));
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--c) 45%, transparent);
+  width: 40px;
+  text-align: right;
+  color: var(--c, var(--app-text-muted));
 }
 
 .score b {
-  font-size: 14px;
-  font-weight: 700;
+  font-family: var(--app-font-display);
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
 }
 
-.score.critical {
+.critical {
   --c: var(--sev-critical);
 }
 
-.score.high {
+.high {
   --c: var(--sev-high);
 }
 
-.score.medium {
+.medium {
   --c: var(--sev-medium);
 }
 
-.score.safe {
+.safe {
   --c: var(--app-success);
 }
 
 .info {
   flex: 1;
   min-width: 0;
-}
-
-.list li + li {
-  margin-top: 4px;
-}
-
-.list li:hover,
-.list li:focus-visible {
-  background: var(--el-fill-color-light);
-}
-
-.list li.active {
-  border-color: color-mix(in srgb, var(--app-primary) 40%, transparent);
-  background: var(--app-primary-soft);
 }
 
 .row {
@@ -262,22 +265,41 @@ async function doExport(format: ReportFormat): Promise<void> {
   white-space: nowrap;
 }
 
+.level {
+  flex-shrink: 0;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--c, var(--app-text-muted));
+  background: color-mix(in srgb, var(--c, var(--app-text-muted)) 10%, transparent);
+}
+
+/* 极高危用实心底色与高危区分 */
+.level.critical {
+  color: #ffffff;
+  background: var(--sev-critical);
+}
+
 .sub {
   margin-top: 4px;
   font-size: 12px;
   color: var(--app-text-muted);
 }
 
-.preview-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px 16px;
+.preview-panel {
+  min-width: 0;
 }
 
-.preview-header .title {
-  font-weight: 600;
+.preview-panel .panel-head {
+  flex-wrap: wrap;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.title {
+  min-width: 0;
 }
 
 .actions {
@@ -292,15 +314,36 @@ async function doExport(format: ReportFormat): Promise<void> {
 
 .preview {
   min-height: 240px;
+  padding: 16px;
 }
 
 .frame {
   display: block;
   width: 100%;
-  height: max(480px, calc(100vh - 260px));
+  height: max(480px, calc(100vh - 240px));
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-sm);
   /* 报告按打印版式渲染，在深色界面下也保持白底 */
   background: #ffffff;
+}
+
+@media (max-width: 1023px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .list-panel {
+    position: static;
+  }
+
+  .list-wrap {
+    max-height: 360px;
+  }
+}
+
+@media (max-width: 767px) {
+  .preview {
+    padding: 10px;
+  }
 }
 </style>

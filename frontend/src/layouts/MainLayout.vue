@@ -56,7 +56,7 @@ function logout(): void {
   <div class="shell">
     <aside :class="['nav', { open: drawerOpen }]">
       <RouterLink to="/" class="brand">
-        <BrandMark :size="34" />
+        <BrandMark :size="28" />
         <span class="brand-text">
           <b>自动化安全评估</b>
         </span>
@@ -115,7 +115,7 @@ function logout(): void {
           <el-icon><Menu /></el-icon>
         </button>
         <RouterLink to="/" class="topbar-brand">
-          <BrandMark :size="26" />
+          <BrandMark :size="24" />
           <b>自动化安全评估</b>
         </RouterLink>
       </header>
@@ -128,7 +128,7 @@ function logout(): void {
 
 <style scoped>
 .shell {
-  --nav-width: 232px;
+  --nav-width: 236px;
   min-height: 100%;
 }
 
@@ -139,33 +139,26 @@ function logout(): void {
   display: flex;
   flex-direction: column;
   width: var(--nav-width);
-  padding: 18px 14px 14px;
+  padding: 20px 14px 14px;
   box-sizing: border-box;
-  background: var(--app-nav-bg);
-  color: var(--app-nav-text);
-  /* 顶部一层淡淡的主色光晕 */
-  background-image: radial-gradient(120% 40% at 0% 0%, rgba(99, 120, 255, 0.18), transparent 70%);
+  background: var(--app-bg);
+  border-right: 1px solid var(--app-border);
+  color: var(--app-text-secondary);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 2px 6px 18px;
-  color: inherit;
+  padding: 0 8px 26px;
+  color: var(--app-text);
   text-decoration: none;
 }
 
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.25;
-}
-
 .brand-text b {
-  font-size: 15.5px;
-  color: #fff;
-  letter-spacing: 0.04em;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .menu {
@@ -174,15 +167,15 @@ function logout(): void {
 }
 
 .group + .group {
-  margin-top: 18px;
+  margin-top: 22px;
 }
 
 .group-title {
-  padding: 0 10px 6px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--app-nav-text);
-  opacity: 0.6;
+  padding: 0 10px 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--app-text-muted);
 }
 
 .item {
@@ -190,78 +183,74 @@ function logout(): void {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 40px;
-  padding: 0 12px;
+  height: 36px;
+  padding: 0 10px;
   margin-bottom: 2px;
-  border-radius: 9px;
-  color: var(--app-nav-text);
+  border-radius: 6px;
+  color: var(--app-text-secondary);
   font-size: 14px;
   text-decoration: none;
   transition: background-color 0.15s, color 0.15s;
 }
 
 .item .el-icon {
-  font-size: 17px;
+  font-size: 16px;
+  color: var(--app-text-muted);
+  transition: color 0.15s;
 }
 
 .item:hover {
-  background: var(--app-nav-hover);
-  color: #fff;
+  background: var(--app-ink-soft);
+  color: var(--app-text);
 }
 
 .item.active {
-  color: var(--app-nav-active);
-  background: linear-gradient(90deg, rgba(99, 120, 255, 0.32), rgba(99, 120, 255, 0.08));
+  color: var(--app-text);
+  background: var(--app-surface);
+  box-shadow: inset 0 0 0 1px var(--app-border);
   font-weight: 600;
 }
 
-.item.active::before {
-  content: '';
-  position: absolute;
-  left: -14px;
-  top: 10px;
-  bottom: 10px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: #8b9bff;
+.item.active .el-icon {
+  color: var(--app-text);
 }
 
 .foot {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   padding-top: 14px;
-  border-top: 1px solid var(--app-nav-border);
+  border-top: 1px solid var(--app-border);
 }
 
 .theme {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2px;
-  padding: 3px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.05);
+  padding: 2px;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 1px var(--app-border);
 }
 
 .theme button {
   display: grid;
   place-items: center;
-  height: 28px;
+  height: 26px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 5px;
   background: transparent;
-  color: var(--app-nav-text);
-  font-size: 15px;
+  color: var(--app-text-muted);
+  font-size: 14px;
   cursor: pointer;
 }
 
 .theme button:hover {
-  color: #fff;
+  color: var(--app-text);
 }
 
 .theme button.on {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: var(--app-ink);
+  color: var(--app-ink-contrast);
 }
 
 .user {
@@ -274,14 +263,14 @@ function logout(): void {
 .avatar {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7c8dff, #3fcf95);
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
+  background: var(--app-surface-sunken);
+  color: var(--app-text);
+  font-weight: 600;
+  font-size: 13px;
 }
 
 .who {
@@ -293,14 +282,16 @@ function logout(): void {
 }
 
 .who b {
-  color: #fff;
+  color: var(--app-text);
   font-size: 13.5px;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .who small {
-  font-size: 11.5px;
+  font-size: 12px;
+  color: var(--app-text-muted);
 }
 
 .logout {
@@ -309,23 +300,23 @@ function logout(): void {
   width: 30px;
   height: 30px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 6px;
   background: transparent;
-  color: var(--app-nav-text);
-  font-size: 16px;
+  color: var(--app-text-muted);
+  font-size: 15px;
   cursor: pointer;
 }
 
 .logout:hover {
-  background: var(--app-nav-hover);
-  color: #fff;
+  background: var(--app-ink-soft);
+  color: var(--app-danger);
 }
 
 .theme button:focus-visible,
 .logout:focus-visible,
 .item:focus-visible,
 .burger:focus-visible {
-  outline: 2px solid #8b9bff;
+  outline: 2px solid var(--app-ink);
   outline-offset: 1px;
 }
 
@@ -347,19 +338,19 @@ function logout(): void {
   .nav {
     transform: translateX(-100%);
     transition: transform 0.22s ease;
-    box-shadow: none;
+    background: var(--app-surface);
   }
 
   .nav.open {
     transform: none;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+    box-shadow: var(--app-shadow-pop);
   }
 
   .scrim {
     position: fixed;
     inset: 0;
     z-index: 29;
-    background: rgba(8, 12, 24, 0.45);
+    background: rgba(10, 10, 10, 0.35);
   }
 
   .content {
@@ -375,8 +366,10 @@ function logout(): void {
     gap: 10px;
     height: 52px;
     padding: 0 12px;
-    background: var(--app-nav-bg);
-    color: #fff;
+    background: color-mix(in srgb, var(--app-bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--app-border);
+    color: var(--app-text);
   }
 
   .topbar-brand {
@@ -385,7 +378,11 @@ function logout(): void {
     gap: 8px;
     color: inherit;
     text-decoration: none;
-    font-size: 15px;
+    font-size: 14.5px;
+  }
+
+  .topbar-brand b {
+    font-weight: 600;
   }
 
   .burger {
@@ -394,9 +391,10 @@ function logout(): void {
     width: 36px;
     height: 36px;
     border: 0;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
+    border-radius: 6px;
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--app-border);
+    color: var(--app-text);
     font-size: 18px;
     cursor: pointer;
   }

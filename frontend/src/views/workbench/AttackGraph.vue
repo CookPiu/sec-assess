@@ -50,11 +50,12 @@ function graphColors() {
   const dark = isDark.value
   return {
     ...c,
-    startFill: '#2b3550',
-    startStroke: dark ? '#55618a' : '#1b2232',
-    capFill: dark ? 'rgba(116, 137, 255, 0.16)' : '#eef1ff',
-    goalFill: dark ? 'rgba(255, 102, 128, 0.16)' : '#fdebee',
-    edge: dark ? '#56617d' : '#a3abbd',
+    startFill: c.text,
+    startStroke: c.text,
+    startLabel: c.surface,
+    capFill: dark ? 'rgba(127, 149, 255, 0.14)' : '#eef1fe',
+    goalFill: dark ? 'rgba(255, 107, 128, 0.14)' : '#fcecee',
+    edge: dark ? '#55555a' : '#b4b3ad',
   }
 }
 
@@ -69,7 +70,7 @@ function nodeStyle(n: ChainNode): Record<string, unknown> {
     labelMaxLines: 2,
     lineWidth: 1.5,
   }
-  if (n.kind === 'start') return { ...base, size: 72, fill: c.startFill, stroke: c.startStroke, labelFill: '#fff' }
+  if (n.kind === 'start') return { ...base, size: 72, fill: c.startFill, stroke: c.startStroke, labelFill: c.startLabel }
   if (n.kind === 'goal')
     return { ...base, size: [104, 44], radius: 22, fill: c.goalFill, stroke: c.danger, labelFill: c.danger, lineWidth: 2 }
   if (n.kind === 'capability')
@@ -78,13 +79,10 @@ function nodeStyle(n: ChainNode): Record<string, unknown> {
   return {
     ...base,
     size: [176, 52],
-    radius: 8,
+    radius: 6,
     fill: c.surface,
     stroke: color,
-    lineWidth: 2,
-    shadowColor: color,
-    shadowBlur: 6,
-    shadowOpacity: 0.25,
+    lineWidth: 1.5,
     labelText: n.route ? `${n.label}\n${shorten(n.route.path, 26)}` : n.label,
     labelFill: c.text,
     labelMaxWidth: 164,
@@ -138,7 +136,7 @@ async function draw(): Promise<void> {
     data: toGraphData(d),
     node: {
       state: {
-        active: { lineWidth: 3, shadowColor: c.warning, shadowBlur: 14, shadowOpacity: 0.6 },
+        active: { lineWidth: 3 },
         inactive: { opacity: 0.25 },
       },
     },
@@ -152,7 +150,7 @@ async function draw(): Promise<void> {
         labelFill: c.textSecondary,
         labelBackground: true,
         labelBackgroundFill: c.surface,
-        labelBackgroundRadius: 4,
+        labelBackgroundRadius: 3,
         labelBackgroundOpacity: 0.9,
         labelPadding: [1, 4],
         labelAutoRotate: false,
@@ -162,7 +160,7 @@ async function draw(): Promise<void> {
         labelMaxLines: 2,
       },
       state: {
-        active: { stroke: c.warning, lineWidth: 2.5, labelFill: c.warning },
+        active: { stroke: c.text, lineWidth: 2, labelFill: c.text },
         inactive: { opacity: 0.15 },
       },
     },
@@ -385,23 +383,23 @@ async function fit(): Promise<void> {
 .canvas-wrap {
   overflow: hidden;
   border: 1px solid var(--app-border);
-  border-radius: var(--app-radius);
+  border-radius: var(--app-radius-sm);
   background-color: var(--app-surface-alt);
   /* 点阵底纹 */
-  background-image: radial-gradient(circle, var(--app-border-strong) 1px, transparent 1.2px);
-  background-size: 18px 18px;
+  background-image: radial-gradient(circle, var(--app-border-strong) 0.8px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 .canvas {
-  height: 480px;
+  height: 500px;
 }
 
 .legend {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  padding: 8px 14px;
+  gap: 8px 18px;
+  padding: 10px 14px;
   border-top: 1px solid var(--app-border);
   background: var(--app-surface);
   font-size: 12px;
@@ -411,7 +409,7 @@ async function fit(): Promise<void> {
 .legend span {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .legend .el-button {
@@ -420,15 +418,16 @@ async function fit(): Promise<void> {
 
 .dot {
   display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
   border: 1.5px solid;
+  box-sizing: border-box;
 }
 
 .dot.start {
-  background: #2b3550;
-  border-color: #1b2232;
+  background: var(--app-ink);
+  border-color: var(--app-ink);
   border-radius: 50%;
 }
 
@@ -452,9 +451,11 @@ async function fit(): Promise<void> {
 .paths-head {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  margin: 20px 0 12px;
-  font-size: 14px;
+  gap: 10px;
+  margin: 28px 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--app-border);
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -474,9 +475,9 @@ async function fit(): Promise<void> {
 }
 
 .paths li {
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1px solid var(--app-border);
-  border-radius: 10px;
+  border-radius: var(--app-radius-sm);
   background: var(--app-surface);
   cursor: pointer;
   transition: border-color 0.15s, background-color 0.15s;
@@ -487,8 +488,8 @@ async function fit(): Promise<void> {
 }
 
 .paths li.active {
-  border-color: var(--app-warning);
-  background: var(--app-warning-soft);
+  border-color: var(--app-ink);
+  box-shadow: inset 0 0 0 1px var(--app-ink);
 }
 
 .path-title {
@@ -496,34 +497,35 @@ async function fit(): Promise<void> {
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 13.5px;
 }
 
 .path-nodes {
   margin-top: 6px;
   font-size: 12.5px;
   color: var(--app-text-secondary);
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .path-detail {
   margin-top: 14px;
-  padding: 6px 18px 16px;
-  border: 1px solid color-mix(in srgb, var(--app-warning) 40%, var(--app-border));
-  border-radius: var(--app-radius);
-  background: linear-gradient(180deg, var(--app-warning-soft), var(--app-surface) 120px);
+  padding: 8px 20px 18px;
+  border: 1px solid var(--app-border);
+  border-left: 2px solid var(--app-warning);
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface);
 }
 
 .steps {
   list-style: none;
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   padding: 0;
 }
 
 .steps li {
   position: relative;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   padding: 5px 0;
   font-size: 13px;
 }
@@ -535,22 +537,23 @@ async function fit(): Promise<void> {
   left: 10px;
   top: 27px;
   bottom: -5px;
-  width: 2px;
-  background: color-mix(in srgb, var(--app-warning) 35%, transparent);
+  width: 1px;
+  background: var(--app-border-strong);
 }
 
 .num {
   position: relative;
   z-index: 1;
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: 21px;
+  height: 21px;
   border-radius: 50%;
-  background: var(--app-warning);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 22px;
+  background: var(--app-ink);
+  color: var(--app-ink-contrast);
+  font-family: var(--app-font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 21px;
   text-align: center;
 }
 
@@ -561,9 +564,9 @@ async function fit(): Promise<void> {
 }
 
 .label {
-  margin-top: 12px;
+  margin-top: 16px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--app-text-muted);
 }
 
@@ -575,8 +578,8 @@ async function fit(): Promise<void> {
 
 .path-detail p {
   margin: 4px 0 0;
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 13.5px;
+  line-height: 1.75;
 }
 
 @media (max-width: 767px) {

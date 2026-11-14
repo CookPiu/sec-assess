@@ -41,7 +41,7 @@ const title = computed(() => SEVERITIES.map((s) => `${s.label} ${props.counts[s.
   display: flex;
   gap: 2px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: 2px;
 }
 
 .seg {
@@ -57,10 +57,10 @@ const title = computed(() => SEVERITIES.map((s) => `${s.label} ${props.counts[s.
 .legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
+  gap: 6px 18px;
   margin-top: 10px;
   font-size: 12.5px;
-  color: var(--app-text-secondary);
+  color: var(--app-text-muted);
 }
 
 .item {
@@ -70,12 +70,13 @@ const title = computed(() => SEVERITIES.map((s) => `${s.label} ${props.counts[s.
 }
 
 .item i {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
 }
 
 .item b {
+  font-weight: 600;
   color: var(--app-text);
 }
 </style>

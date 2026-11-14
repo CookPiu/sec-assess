@@ -1,128 +1,156 @@
 /*
  * 设计变量：浅色为默认，html.dark 时切换为深色。
+ * 界面框架只用灰阶与墨色，彩色只表达严重等级和任务状态。
  * 图表和拓扑图用的颜色在 src/utils/theme.ts 中有同名的一份，修改时两处一起改。
  */
 :root {
-  --app-bg: #f3f5fa;
+  --app-bg: #f4f4f2;
   --app-surface: #ffffff;
-  --app-surface-alt: #f6f8fc;
-  --app-surface-sunken: #eef1f7;
-  --app-border: #e2e6ef;
-  --app-border-strong: #cfd5e2;
-  --app-text: #1b2232;
-  --app-text-secondary: #4b566b;
-  --app-text-muted: #8590a6;
-  --app-primary: #3f5bf6;
-  --app-primary-soft: #eef1ff;
-  --app-success: #17946a;
-  --app-success-soft: #e6f6ef;
-  --app-warning: #d98a0b;
-  --app-warning-soft: #fdf4e3;
-  --app-danger: #d6334a;
-  --app-danger-soft: #fdebee;
+  --app-surface-alt: #fafaf9;
+  --app-surface-sunken: #ececea;
+  --app-border: #e4e3df;
+  --app-border-strong: #cfcec8;
+  --app-text: #141414;
+  --app-text-secondary: #4d4d4a;
+  --app-text-muted: #8a8984;
 
-  --sev-critical: #b3123a;
-  --sev-high: #e2513c;
-  --sev-medium: #e09a16;
-  --sev-low: #3a78d8;
-  --sev-info: #8590a6;
+  /* 墨色：主按钮、选中项、当前导航 */
+  --app-ink: #141414;
+  --app-ink-contrast: #ffffff;
+  --app-ink-soft: rgba(20, 20, 20, 0.05);
 
-  /* 侧栏在两种主题下都用深色 */
-  --app-nav-bg: #111829;
-  --app-nav-text: #a9b2c7;
-  --app-nav-active: #ffffff;
-  --app-nav-hover: rgba(255, 255, 255, 0.06);
-  --app-nav-border: rgba(255, 255, 255, 0.08);
+  /* 强调色：只用于“进行中”、入口路由等需要和墨色区分的信息 */
+  --app-primary: #2f55f4;
+  --app-primary-soft: rgba(47, 85, 244, 0.08);
+  --app-success: #14855d;
+  --app-success-soft: rgba(20, 133, 93, 0.08);
+  --app-warning: #c97f00;
+  --app-warning-soft: rgba(201, 127, 0, 0.09);
+  --app-danger: #d12c45;
+  --app-danger-soft: rgba(209, 44, 69, 0.07);
+
+  --sev-critical: #b0123b;
+  --sev-high: #e04a2f;
+  --sev-medium: #d99000;
+  --sev-low: #2f6fdb;
+  --sev-info: #8a8984;
 
   /* 日志、报文等终端风格区域 */
-  --app-term-bg: #0f1523;
-  --app-term-text: #d3d9e6;
-  --app-term-muted: #6f7a92;
+  --app-term-bg: #161616;
+  --app-term-text: #dcdcd8;
+  --app-term-muted: #7c7c77;
+  --app-term-accent: #9fb0ff;
 
-  --app-radius: 12px;
-  --app-radius-sm: 8px;
-  --app-shadow: 0 1px 2px rgba(17, 24, 41, 0.04), 0 4px 16px rgba(17, 24, 41, 0.05);
-  --app-shadow-lift: 0 2px 4px rgba(17, 24, 41, 0.06), 0 12px 32px rgba(17, 24, 41, 0.1);
+  --app-radius: 10px;
+  --app-radius-sm: 6px;
+  --app-shadow: none;
+  --app-shadow-pop: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.08);
+  --app-font:
+    'Inter', 'Segoe UI Variable Text', 'Segoe UI', 'PingFang SC', 'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei UI',
+    'Microsoft YaHei', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  --app-font-display:
+    'Inter Display', 'Inter', 'Segoe UI Variable Display', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', sans-serif;
   --app-font-mono: 'JetBrains Mono', 'Cascadia Code', 'Cascadia Mono', Consolas, 'Courier New', monospace;
   --app-mix-base: #ffffff;
 
-  /* Element Plus 主色与表面色接入设计变量 */
-  --el-color-primary: var(--app-primary);
-  --el-color-primary-light-3: color-mix(in srgb, var(--app-primary) 70%, var(--app-mix-base));
-  --el-color-primary-light-5: color-mix(in srgb, var(--app-primary) 50%, var(--app-mix-base));
-  --el-color-primary-light-7: color-mix(in srgb, var(--app-primary) 30%, var(--app-mix-base));
-  --el-color-primary-light-8: color-mix(in srgb, var(--app-primary) 20%, var(--app-mix-base));
-  --el-color-primary-light-9: color-mix(in srgb, var(--app-primary) 10%, var(--app-mix-base));
-  --el-color-primary-dark-2: color-mix(in srgb, var(--app-primary) 80%, #000000);
+  /* Element Plus 的主色接墨色，控件保持黑白 */
+  --el-color-primary: var(--app-ink);
+  --el-color-primary-light-3: color-mix(in srgb, var(--app-ink) 70%, var(--app-mix-base));
+  --el-color-primary-light-5: color-mix(in srgb, var(--app-ink) 50%, var(--app-mix-base));
+  --el-color-primary-light-7: color-mix(in srgb, var(--app-ink) 22%, var(--app-mix-base));
+  --el-color-primary-light-8: color-mix(in srgb, var(--app-ink) 12%, var(--app-mix-base));
+  --el-color-primary-light-9: color-mix(in srgb, var(--app-ink) 5%, var(--app-mix-base));
+  --el-color-primary-dark-2: color-mix(in srgb, var(--app-ink) 85%, #888888);
   --el-bg-color: var(--app-surface);
   --el-bg-color-overlay: var(--app-surface);
   --el-bg-color-page: var(--app-bg);
   --el-fill-color-blank: var(--app-surface);
-  --el-border-color: var(--app-border);
+  --el-fill-color-light: var(--app-surface-alt);
+  --el-fill-color-lighter: var(--app-surface-alt);
+  --el-border-color: var(--app-border-strong);
   --el-border-color-light: var(--app-border);
   --el-border-color-lighter: var(--app-border);
+  --el-border-color-hover: var(--app-text-muted);
   --el-text-color-primary: var(--app-text);
   --el-text-color-regular: var(--app-text-secondary);
   --el-text-color-secondary: var(--app-text-muted);
+  --el-text-color-placeholder: var(--app-text-muted);
   --el-border-radius-base: 6px;
+  --el-border-radius-small: 4px;
+  --el-box-shadow-light: var(--app-shadow-pop);
+  --el-box-shadow: var(--app-shadow-pop);
   --el-font-family: inherit;
+  --el-color-danger: var(--app-danger);
+  --el-color-success: var(--app-success);
+  --el-color-warning: var(--app-warning);
 
   color-scheme: light;
 }
 
 html.dark {
-  --app-bg: #0b1020;
-  --app-surface: #151b2b;
-  --app-surface-alt: #1a2134;
-  --app-surface-sunken: #10162a;
-  --app-border: #283149;
-  --app-border-strong: #364163;
-  --app-text: #e7eaf3;
-  --app-text-secondary: #b4bccd;
-  --app-text-muted: #7f89a1;
-  --app-primary: #7489ff;
-  --app-primary-soft: rgba(116, 137, 255, 0.14);
-  --app-success: #3fcf95;
-  --app-success-soft: rgba(63, 207, 149, 0.13);
-  --app-warning: #f2b544;
-  --app-warning-soft: rgba(242, 181, 68, 0.13);
-  --app-danger: #ff6680;
-  --app-danger-soft: rgba(255, 102, 128, 0.13);
+  --app-bg: #0d0d0e;
+  --app-surface: #151516;
+  --app-surface-alt: #19191b;
+  --app-surface-sunken: #202022;
+  --app-border: #29292c;
+  --app-border-strong: #3a3a3e;
+  --app-text: #ededea;
+  --app-text-secondary: #b5b5b0;
+  --app-text-muted: #7d7d78;
 
-  --sev-critical: #ff5277;
-  --sev-high: #ff7d5e;
-  --sev-medium: #f4b740;
-  --sev-low: #64a0ff;
-  --sev-info: #7f89a1;
+  --app-ink: #ededea;
+  --app-ink-contrast: #111111;
+  --app-ink-soft: rgba(237, 237, 234, 0.06);
 
-  --app-nav-bg: #0a0f1d;
-  --app-nav-border: rgba(255, 255, 255, 0.06);
-  --app-term-bg: #0a0f1c;
+  --app-primary: #7f95ff;
+  --app-primary-soft: rgba(127, 149, 255, 0.12);
+  --app-success: #3fcb8f;
+  --app-success-soft: rgba(63, 203, 143, 0.1);
+  --app-warning: #f0b440;
+  --app-warning-soft: rgba(240, 180, 64, 0.1);
+  --app-danger: #ff6b80;
+  --app-danger-soft: rgba(255, 107, 128, 0.1);
 
-  --app-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --app-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.35);
-  --app-mix-base: #151b2b;
+  --sev-critical: #ff4f78;
+  --sev-high: #ff7e5c;
+  --sev-medium: #f2b33d;
+  --sev-low: #6aa2ff;
+  --sev-info: #7d7d78;
+
+  --app-term-bg: #0a0a0b;
+  --app-term-text: #d6d6d2;
+  --app-term-muted: #6d6d68;
+
+  --app-shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 16px 40px rgba(0, 0, 0, 0.5);
+  --app-mix-base: #151516;
 
   /* Element Plus 暗色变量会覆盖主色，这里重新接入 */
-  --el-color-primary: var(--app-primary);
-  --el-color-primary-light-3: color-mix(in srgb, var(--app-primary) 70%, var(--app-mix-base));
-  --el-color-primary-light-5: color-mix(in srgb, var(--app-primary) 50%, var(--app-mix-base));
-  --el-color-primary-light-7: color-mix(in srgb, var(--app-primary) 30%, var(--app-mix-base));
-  --el-color-primary-light-8: color-mix(in srgb, var(--app-primary) 20%, var(--app-mix-base));
-  --el-color-primary-light-9: color-mix(in srgb, var(--app-primary) 10%, var(--app-mix-base));
-  --el-color-primary-dark-2: color-mix(in srgb, var(--app-primary) 80%, #ffffff);
+  --el-color-primary: var(--app-ink);
+  --el-color-primary-light-3: color-mix(in srgb, var(--app-ink) 70%, var(--app-mix-base));
+  --el-color-primary-light-5: color-mix(in srgb, var(--app-ink) 50%, var(--app-mix-base));
+  --el-color-primary-light-7: color-mix(in srgb, var(--app-ink) 25%, var(--app-mix-base));
+  --el-color-primary-light-8: color-mix(in srgb, var(--app-ink) 14%, var(--app-mix-base));
+  --el-color-primary-light-9: color-mix(in srgb, var(--app-ink) 7%, var(--app-mix-base));
+  --el-color-primary-dark-2: color-mix(in srgb, var(--app-ink) 80%, #000000);
   --el-bg-color: var(--app-surface);
   --el-bg-color-overlay: var(--app-surface-alt);
   --el-bg-color-page: var(--app-bg);
   --el-fill-color-blank: var(--app-surface);
   --el-fill-color-light: var(--app-surface-alt);
   --el-fill-color-lighter: var(--app-surface-alt);
-  --el-border-color: var(--app-border);
+  --el-border-color: var(--app-border-strong);
   --el-border-color-light: var(--app-border);
   --el-border-color-lighter: var(--app-border);
+  --el-border-color-hover: var(--app-text-muted);
   --el-text-color-primary: var(--app-text);
   --el-text-color-regular: var(--app-text-secondary);
   --el-text-color-secondary: var(--app-text-muted);
+  --el-text-color-placeholder: var(--app-text-muted);
+  --el-box-shadow-light: var(--app-shadow-pop);
+  --el-box-shadow: var(--app-shadow-pop);
+  --el-color-danger: var(--app-danger);
+  --el-color-success: var(--app-success);
+  --el-color-warning: var(--app-warning);
 
   color-scheme: dark;
 }
@@ -137,12 +165,16 @@ body,
 body {
   background: var(--app-bg);
   color: var(--app-text);
-  font-family:
-    'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans SC', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
+  font-family: var(--app-font);
   font-size: 14px;
+  line-height: 1.5;
+  font-feature-settings: 'cv11', 'ss01';
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.2s;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--app-primary) 22%, transparent);
 }
 
 code,
@@ -151,8 +183,12 @@ kbd {
   font-family: var(--app-font-mono);
 }
 
+a {
+  color: inherit;
+}
+
 .page {
-  padding: 24px 28px 40px;
+  padding: 36px 40px 56px;
   max-width: 1480px;
   margin: 0 auto;
   box-sizing: border-box;
@@ -163,29 +199,30 @@ kbd {
   align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px 16px;
-  margin-bottom: 20px;
+  gap: 16px 24px;
+  margin-bottom: 28px;
 }
 
 .page-title {
   margin: 0;
-  font-size: 22px;
-  font-weight: 650;
-  letter-spacing: 0.01em;
+  font-family: var(--app-font-display);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
 }
 
 .page-desc {
-  margin: 4px 0 0;
-  font-size: 13px;
+  margin: 8px 0 0;
+  font-size: 13.5px;
   color: var(--app-text-muted);
 }
 
-/* 面板：页面上的主要分区 */
+/* 面板：页面上的主要分区，只用细线区分层级 */
 .panel {
   background: var(--app-surface);
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius);
-  box-shadow: var(--app-shadow);
 }
 
 .panel-head {
@@ -194,7 +231,7 @@ kbd {
   justify-content: space-between;
   gap: 12px;
   min-height: 52px;
-  padding: 0 18px;
+  padding: 0 20px;
   border-bottom: 1px solid var(--app-border);
   box-sizing: border-box;
 }
@@ -203,12 +240,24 @@ kbd {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 600;
 }
 
+.panel-title .el-icon {
+  color: var(--app-text-muted);
+}
+
 .panel-body {
-  padding: 16px 18px;
+  padding: 18px 20px;
+}
+
+/* 小号的分区标签 */
+.eyebrow {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--app-text-muted);
 }
 
 .muted {
@@ -224,26 +273,33 @@ kbd {
   font-variant-numeric: tabular-nums;
 }
 
-/* 小节标题前的强调条 */
+/* 计数小标 */
+.count-chip {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--app-text-secondary);
+  background: var(--app-surface-sunken);
+}
+
+/* 内容区的小节标题，下方一条细线 */
 .section-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 22px 0 12px;
-  font-size: 14px;
+  margin: 32px 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--app-border);
+  font-size: 15px;
   font-weight: 600;
-}
-
-.section-title > span:first-child::before {
-  content: '';
-  display: inline-block;
-  width: 3px;
-  height: 13px;
-  margin-right: 8px;
-  border-radius: 2px;
-  background: var(--app-primary);
-  vertical-align: -1px;
 }
 
 /* 终端风格的原文区域 */
@@ -253,53 +309,168 @@ kbd {
   background: var(--app-term-bg);
   color: var(--app-term-text);
   border-radius: var(--app-radius-sm);
-  padding: 12px 14px;
+  padding: 14px 16px;
   font-family: var(--app-font-mono);
   font-size: 12.5px;
-  line-height: 1.65;
+  line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-all;
 }
 
+html.dark .term {
+  box-shadow: inset 0 0 0 1px var(--app-border);
+}
+
 /* Element Plus 组件在设计变量下的细节调整 */
+.el-button {
+  font-weight: 500;
+}
+
+.el-button--primary {
+  --el-button-text-color: var(--app-ink-contrast);
+  --el-button-hover-text-color: var(--app-ink-contrast);
+  --el-button-active-text-color: var(--app-ink-contrast);
+  --el-button-disabled-text-color: var(--app-ink-contrast);
+  --el-button-hover-bg-color: color-mix(in srgb, var(--app-ink) 84%, var(--app-bg));
+  --el-button-hover-border-color: color-mix(in srgb, var(--app-ink) 84%, var(--app-bg));
+}
+
+.el-button--primary.is-link,
+.el-button--primary.is-text {
+  --el-button-text-color: var(--app-ink);
+  --el-button-hover-link-text-color: var(--app-text-secondary);
+  font-weight: 600;
+}
+
+.el-button--large {
+  --el-button-size: 40px;
+  padding: 10px 18px;
+}
+
 .el-card {
   border-radius: var(--app-radius);
   border-color: var(--app-border);
+  --el-card-padding: 20px;
+}
+
+.el-card__header {
+  font-weight: 600;
 }
 
 .el-dialog {
-  border-radius: var(--app-radius);
+  --el-dialog-border-radius: 12px;
+  --el-dialog-padding-primary: 24px;
+}
+
+.el-dialog__title {
+  font-weight: 600;
+}
+
+.el-overlay {
+  background-color: rgba(10, 10, 10, 0.4);
+}
+
+.el-message-box {
+  --el-messagebox-border-radius: 12px;
+}
+
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  box-shadow: 0 0 0 1px var(--app-border-strong) inset;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px var(--app-ink) inset;
+}
+
+.el-radio-button__original-radio:checked + .el-radio-button__inner {
+  color: var(--app-ink-contrast);
+}
+
+.el-switch.is-checked .el-switch__core .el-switch__action {
+  background-color: var(--app-ink-contrast);
+}
+
+.el-pagination.is-background .el-pager li.is-active {
+  color: var(--app-ink-contrast);
 }
 
 .el-table {
-  --el-table-header-bg-color: var(--app-surface-alt);
-  --el-table-row-hover-bg-color: var(--app-surface-alt);
-  --el-table-tr-bg-color: var(--app-surface);
-  --el-table-bg-color: var(--app-surface);
+  --el-table-header-bg-color: transparent;
+  --el-table-row-hover-bg-color: var(--app-ink-soft);
+  --el-table-tr-bg-color: transparent;
+  --el-table-bg-color: transparent;
   --el-table-border-color: var(--app-border);
+  --el-table-header-text-color: var(--app-text-muted);
 }
 
 .el-table th.el-table__cell {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 12.5px;
-  color: var(--app-text-muted);
 }
 
 .el-tabs__item {
   font-weight: 500;
+  color: var(--app-text-muted);
+}
+
+.el-tabs__item.is-active {
+  color: var(--app-text);
+  font-weight: 600;
+}
+
+.el-tabs__active-bar {
+  height: 2px;
+}
+
+.el-tabs__nav-wrap::after {
+  height: 1px;
+  background-color: var(--app-border);
+}
+
+.el-tag {
+  --el-tag-border-radius: 4px;
+  font-weight: 500;
+  border-color: transparent;
+}
+
+.el-alert {
+  --el-alert-border-radius-base: var(--app-radius-sm);
+}
+
+.el-drawer__header {
+  margin-bottom: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--app-border);
+  font-weight: 600;
+  color: var(--app-text);
+}
+
+.el-loading-mask {
+  background-color: color-mix(in srgb, var(--app-surface) 70%, transparent);
 }
 
 html.dark .el-tag--dark.el-tag--info {
-  --el-tag-bg-color: #4b5570;
+  --el-tag-bg-color: #45454a;
+}
+
+:focus-visible {
+  outline-color: var(--app-ink);
 }
 
 @media (max-width: 767px) {
   .page {
-    padding: 16px 14px 32px;
+    padding: 20px 16px 36px;
+  }
+
+  .page-head {
+    margin-bottom: 20px;
   }
 
   .page-title {
-    font-size: 19px;
+    font-size: 22px;
   }
 
   .panel-head {

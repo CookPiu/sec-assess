@@ -163,21 +163,17 @@ async function reassess(p: ProjectOut): Promise<void> {
 
     <el-alert v-if="loadError" :title="loadError" type="error" show-icon :closable="false" class="block" />
 
-    <section class="overview">
-      <div class="panel risk">
-        <div class="risk-main">
-          <div class="eyebrow">严重与高危漏洞</div>
-          <div class="big num">{{ severeTotal }}</div>
-          <div class="muted">
-            共 {{ allTotal }} 条漏洞，{{ riskyProjects }} 个项目存在严重或高危问题
-          </div>
+    <section class="overview panel">
+      <div class="cell risk">
+        <div class="eyebrow">严重与高危漏洞</div>
+        <div class="big num">
+          {{ severeTotal }}<small>/ {{ allTotal }}</small>
         </div>
-        <div class="risk-bar">
-          <SeverityBar :counts="totals" legend :height="12" />
-        </div>
+        <div class="risk-note">{{ riskyProjects }} 个项目存在严重或高危问题</div>
+        <SeverityBar :counts="totals" legend :height="6" class="risk-bar" />
       </div>
 
-      <div class="panel states">
+      <div class="cell states">
         <div class="eyebrow">评估状态</div>
         <ul>
           <li v-for="s in statusCounts" :key="s.status" :class="[s.status, { zero: !s.count }]">
@@ -188,21 +184,21 @@ async function reassess(p: ProjectOut): Promise<void> {
         </ul>
       </div>
 
-      <div class="panel scale">
+      <div class="cell scale">
         <div class="eyebrow">项目规模</div>
-        <div class="scale-row">
+        <dl class="scale-row">
           <div>
-            <div class="mid num">{{ projects.length }}</div>
-            <div class="muted">项目</div>
+            <dt>项目</dt>
+            <dd class="num">{{ projects.length }}</dd>
           </div>
           <div>
-            <div class="mid num">{{ totalLoc.toLocaleString() }}</div>
-            <div class="muted">代码行</div>
+            <dt>代码行</dt>
+            <dd class="num">{{ totalLoc.toLocaleString() }}</dd>
           </div>
-        </div>
+        </dl>
         <div class="sources">
-          <span><el-icon><Share /></el-icon>Git 仓库 <b class="num">{{ sourceCounts.git }}</b></span>
-          <span><el-icon><Box /></el-icon>zip 上传 <b class="num">{{ sourceCounts.zip }}</b></span>
+          <span>Git 仓库 <b class="num">{{ sourceCounts.git }}</b></span>
+          <span>zip 上传 <b class="num">{{ sourceCounts.zip }}</b></span>
         </div>
       </div>
     </section>
@@ -210,8 +206,8 @@ async function reassess(p: ProjectOut): Promise<void> {
     <section class="panel">
       <div class="panel-head">
         <span class="panel-title">
-          项目
-          <span class="count num">{{ filtered.length }}</span>
+          全部项目
+          <span class="count-chip">{{ filtered.length }}</span>
         </span>
         <div class="tools">
           <el-input v-model="keyword" placeholder="按名称、地址或技术栈筛选" clearable class="search">
@@ -240,9 +236,6 @@ async function reassess(p: ProjectOut): Promise<void> {
         <div v-else-if="view === 'cards'" class="cards">
           <article v-for="p in filtered" :key="p.id" :class="['card', { live: isActive(p) }]">
             <header class="card-head">
-              <span :class="['src', p.source_type]">
-                <el-icon><component :is="p.source_type === 'git' ? 'Share' : 'Box'" /></el-icon>
-              </span>
               <div class="card-title">
                 <RouterLink
                   v-if="p.latest_task"
@@ -268,7 +261,7 @@ async function reassess(p: ProjectOut): Promise<void> {
                   <template v-else>{{ formatTime(p.latest_task.finished_at ?? p.latest_task.created_at) }}</template>
                 </span>
               </div>
-              <SeverityBar :counts="p.latest_task.counts" legend />
+              <SeverityBar :counts="p.latest_task.counts" legend :height="4" />
             </template>
             <div v-else class="muted">还没有评估记录</div>
 
@@ -344,51 +337,55 @@ async function reassess(p: ProjectOut): Promise<void> {
   margin-bottom: 16px;
 }
 
+/* 概览：一条横向的数据带，三格之间用细线分隔 */
 .overview {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
-  margin-bottom: 16px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) minmax(0, 1fr);
+  margin-bottom: 28px;
 }
 
-.overview .panel {
-  padding: 18px 20px;
-}
-
-.eyebrow {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--app-text-muted);
-  letter-spacing: 0.04em;
-}
-
-.risk {
+.cell {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 16px;
-  border-top: 3px solid var(--sev-critical);
+  min-width: 0;
+  padding: 22px 24px;
+}
+
+.cell + .cell {
+  border-left: 1px solid var(--app-border);
 }
 
 .big {
-  margin: 6px 0 2px;
-  font-size: 46px;
-  font-weight: 700;
-  line-height: 1.05;
-  color: var(--sev-critical);
-  letter-spacing: -0.02em;
+  margin: 14px 0 4px;
+  font-family: var(--app-font-display);
+  font-size: 56px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: var(--app-text);
 }
 
-.mid {
-  margin-top: 8px;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.1;
+.big small {
+  margin-left: 8px;
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--app-text-muted);
+}
+
+.risk-note {
+  font-size: 13px;
+  color: var(--app-text-secondary);
+}
+
+.risk-bar {
+  margin-top: auto;
+  padding-top: 22px;
 }
 
 .states ul {
   list-style: none;
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   padding: 0;
 }
 
@@ -396,13 +393,14 @@ async function reassess(p: ProjectOut): Promise<void> {
   --c: var(--app-text-muted);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 0;
+  gap: 10px;
+  padding: 6px 0;
   font-size: 13px;
+  color: var(--app-text-secondary);
 }
 
 .states li + li {
-  border-top: 1px dashed var(--app-border);
+  border-top: 1px solid var(--app-border);
 }
 
 .states li.running {
@@ -422,61 +420,58 @@ async function reassess(p: ProjectOut): Promise<void> {
 }
 
 .states li.zero {
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .states .dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--c);
 }
 
 .states b {
   margin-left: auto;
-  font-size: 15px;
-}
-
-.scale {
-  display: flex;
-  flex-direction: column;
-}
-
-.sources {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: auto;
-  padding-top: 14px;
-}
-
-.sources span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: var(--app-surface-alt);
-  font-size: 12.5px;
-  color: var(--app-text-secondary);
-}
-
-.sources b {
+  font-size: 14px;
+  font-weight: 600;
   color: var(--app-text);
 }
 
 .scale-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin: 14px 0 0;
 }
 
-.count {
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--app-surface-sunken);
-  font-size: 12px;
-  color: var(--app-text-secondary);
+.scale-row dt {
+  font-size: 12.5px;
+  color: var(--app-text-muted);
+}
+
+.scale-row dd {
+  margin: 2px 0 0;
+  font-family: var(--app-font-display);
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: auto;
+  padding-top: 18px;
+  font-size: 12.5px;
+  color: var(--app-text-muted);
+}
+
+.sources b {
+  margin-left: 2px;
+  font-weight: 600;
+  color: var(--app-text);
 }
 
 .tools {
@@ -486,7 +481,7 @@ async function reassess(p: ProjectOut): Promise<void> {
 }
 
 .search {
-  width: 240px;
+  width: 260px;
 }
 
 .view-switch :deep(.el-radio-button__inner) {
@@ -495,34 +490,37 @@ async function reassess(p: ProjectOut): Promise<void> {
 
 .projects {
   min-height: 160px;
+  padding: 0;
 }
 
+/* 卡片网格：卡片之间共用细线，不留缝隙 */
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-  gap: 14px;
+  margin: 0 -1px -1px 0;
 }
 
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius);
-  background: var(--app-surface);
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  gap: 16px;
+  padding: 20px;
+  border-right: 1px solid var(--app-border);
+  border-bottom: 1px solid var(--app-border);
+  transition: background-color 0.15s;
 }
 
 .card:hover {
-  border-color: var(--app-border-strong);
-  box-shadow: var(--app-shadow-lift);
-  transform: translateY(-1px);
+  background: var(--app-surface-alt);
 }
 
-.card.live {
-  border-color: color-mix(in srgb, var(--app-primary) 45%, var(--app-border));
-  background: linear-gradient(180deg, var(--app-primary-soft), var(--app-surface) 45%);
+.card.live::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--app-primary);
 }
 
 .card-head {
@@ -531,33 +529,18 @@ async function reassess(p: ProjectOut): Promise<void> {
   gap: 10px;
 }
 
-.src {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  font-size: 17px;
-  color: var(--app-primary);
-  background: var(--app-primary-soft);
-}
-
-.src.zip {
-  color: var(--app-success);
-  background: var(--app-success-soft);
-}
-
 .card-title {
   flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
 .name {
   font-weight: 600;
-  font-size: 15px;
+  font-size: 15.5px;
+  letter-spacing: -0.005em;
   color: var(--app-text);
   text-decoration: none;
   overflow: hidden;
@@ -566,7 +549,8 @@ async function reassess(p: ProjectOut): Promise<void> {
 }
 
 a.name:hover {
-  color: var(--app-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .sub {
@@ -580,7 +564,7 @@ a.name:hover {
 .progress {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .card-foot {
@@ -589,8 +573,8 @@ a.name:hover {
   justify-content: space-between;
   gap: 8px;
   margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid var(--app-border);
+  padding-top: 14px;
+  border-top: 1px dashed var(--app-border);
 }
 
 .facts {
@@ -598,7 +582,7 @@ a.name:hover {
   gap: 10px;
   min-width: 0;
   font-size: 12.5px;
-  color: var(--app-text-secondary);
+  color: var(--app-text-muted);
   overflow: hidden;
   white-space: nowrap;
 }
@@ -614,7 +598,11 @@ a.name:hover {
 }
 
 .actions .el-button + .el-button {
-  margin-left: 12px;
+  margin-left: 14px;
+}
+
+.el-table {
+  padding: 0 8px;
 }
 
 .table-state {
@@ -635,12 +623,30 @@ a.name:hover {
 
   .risk {
     grid-column: 1 / -1;
+    border-bottom: 1px solid var(--app-border);
+  }
+
+  .risk + .cell {
+    border-left: 0;
   }
 }
 
 @media (max-width: 767px) {
   .overview {
     grid-template-columns: 1fr;
+  }
+
+  .cell + .cell {
+    border-left: 0;
+    border-top: 1px solid var(--app-border);
+  }
+
+  .risk {
+    border-bottom: 0;
+  }
+
+  .scale-row {
+    grid-template-columns: 1fr 1fr;
   }
 
   .panel-head {
@@ -659,7 +665,7 @@ a.name:hover {
   }
 
   .big {
-    font-size: 38px;
+    font-size: 44px;
   }
 }
 </style>

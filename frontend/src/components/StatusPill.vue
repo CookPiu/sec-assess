@@ -17,19 +17,21 @@ defineProps<{ status: TaskStatus }>()
   --c: var(--app-text-muted);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   height: 24px;
-  padding: 0 10px;
+  padding: 0 9px;
   border-radius: 999px;
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
-  color: var(--c);
-  background: color-mix(in srgb, var(--c) 12%, transparent);
+  color: var(--app-text-secondary);
+  box-shadow: inset 0 0 0 1px var(--app-border);
 }
 
 .running {
   --c: var(--app-primary);
+  color: var(--app-primary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-primary) 35%, transparent);
 }
 
 .completed {
@@ -38,6 +40,7 @@ defineProps<{ status: TaskStatus }>()
 
 .failed {
   --c: var(--app-danger);
+  color: var(--app-danger);
 }
 
 .stopped {
@@ -46,8 +49,8 @@ defineProps<{ status: TaskStatus }>()
 
 .dot {
   position: relative;
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--c);
 }

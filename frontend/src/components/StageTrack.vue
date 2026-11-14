@@ -77,13 +77,13 @@ const summary = computed(() => items.value.map((s) => `${s.label}${s.text ? `：
 
 .track-compact .bar {
   flex: 1;
-  height: 4px;
-  border-radius: 2px;
+  height: 3px;
+  border-radius: 1px;
   background: var(--app-surface-sunken);
 }
 
 .track-compact .bar.done {
-  background: var(--app-success);
+  background: var(--app-ink);
 }
 
 .track-compact .bar.active {
@@ -100,8 +100,11 @@ const summary = computed(() => items.value.map((s) => `${s.label}${s.text ? `：
   background: var(--app-warning);
 }
 
+/* 完整轨道：五列，每列顶部一条状态线，下方是序号、阶段名和状态 */
 .track {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -109,47 +112,32 @@ const summary = computed(() => items.value.map((s) => `${s.label}${s.text ? `：
 
 .stage {
   --c: var(--app-border-strong);
-  position: relative;
-  flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   min-width: 0;
-  padding-right: 12px;
-}
-
-/* 阶段之间的连接线，已完成的阶段之后为绿色 */
-.stage::after {
-  content: '';
-  flex: 1;
-  height: 2px;
-  min-width: 8px;
-  border-radius: 1px;
-  background: var(--app-border);
-}
-
-.stage:last-child::after {
-  display: none;
+  padding-top: 12px;
+  border-top: 2px solid var(--app-border);
 }
 
 .stage.done {
-  --c: var(--app-success);
-}
-
-.stage.done::after {
-  background: var(--app-success);
+  --c: var(--app-ink);
+  border-top-color: var(--app-ink);
 }
 
 .stage.active {
   --c: var(--app-primary);
+  border-top-color: var(--app-primary);
 }
 
 .stage.failed {
   --c: var(--app-danger);
+  border-top-color: var(--app-danger);
 }
 
 .stage.stopped {
   --c: var(--app-warning);
+  border-top-color: var(--app-warning);
 }
 
 .node {
@@ -157,19 +145,27 @@ const summary = computed(() => items.value.map((s) => `${s.label}${s.text ? `：
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  font-size: 13px;
+  font-family: var(--app-font-mono);
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--c);
-  background: color-mix(in srgb, var(--c) 12%, var(--app-surface));
-  box-shadow: inset 0 0 0 1.5px var(--c);
+  color: var(--app-text-muted);
+  box-shadow: inset 0 0 0 1px var(--app-border-strong);
 }
 
-.stage.wait .node {
-  color: var(--app-text-muted);
-  background: var(--app-surface);
+.stage.done .node {
+  color: var(--app-ink-contrast);
+  background: var(--app-ink);
+  box-shadow: none;
+}
+
+.stage.active .node,
+.stage.failed .node,
+.stage.stopped .node {
+  color: var(--c);
+  box-shadow: inset 0 0 0 1.5px var(--c);
 }
 
 .stage.active .node::after {
@@ -185,28 +181,34 @@ const summary = computed(() => items.value.map((s) => `${s.label}${s.text ? `：
 .text {
   display: flex;
   flex-direction: column;
+  gap: 1px;
   min-width: 0;
   white-space: nowrap;
 }
 
 .label {
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 13.5px;
   font-weight: 600;
+  line-height: 22px;
   color: var(--app-text);
 }
 
 .stage.wait .label {
-  color: var(--app-text-secondary);
+  color: var(--app-text-muted);
   font-weight: 500;
 }
 
 .state {
   font-size: 12px;
-  color: var(--c);
+  color: var(--app-text-muted);
 }
 
-.stage.wait .state {
-  color: var(--app-text-muted);
+.stage.active .state,
+.stage.failed .state,
+.stage.stopped .state {
+  color: var(--c);
 }
 
 @keyframes pulse {
@@ -229,34 +231,31 @@ const summary = computed(() => items.value.map((s) => `${s.label}${s.text ? `：
 /* 窄屏改为纵向列表，阶段名不再被挤成一两个字一行 */
 @media (max-width: 900px) {
   .track {
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
 
   .stage {
-    padding: 0 0 14px;
+    align-items: center;
+    padding: 8px 0 8px 12px;
+    border-top: 0;
+    border-left: 2px solid var(--app-border);
   }
 
-  .stage::after {
-    display: none;
+  .stage.done {
+    border-left-color: var(--app-ink);
   }
 
-  .stage + .stage::before {
-    content: '';
-    position: absolute;
-    top: -14px;
-    left: 14px;
-    width: 2px;
-    height: 14px;
-    background: var(--app-border);
+  .stage.active {
+    border-left-color: var(--app-primary);
   }
 
-  .stage.done + .stage::before {
-    background: var(--app-success);
+  .stage.failed {
+    border-left-color: var(--app-danger);
   }
 
-  .stage:last-child {
-    padding-bottom: 0;
+  .stage.stopped {
+    border-left-color: var(--app-warning);
   }
 
   .text {

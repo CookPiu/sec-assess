@@ -26,22 +26,21 @@ const label = computed(() => SEVERITY_META[props.severity]?.label ?? props.sever
   --c: var(--sev-info);
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
+  padding: 0 7px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
   color: var(--c);
-  background: color-mix(in srgb, var(--c) 12%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent);
+  background: color-mix(in srgb, var(--c) 10%, transparent);
 }
 
 .sev-badge.default {
   height: 26px;
-  padding: 0 10px;
+  padding: 0 9px;
   font-size: 13px;
 }
 
@@ -64,14 +63,14 @@ const label = computed(() => SEVERITY_META[props.severity]?.label ?? props.sever
 .dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: 1px;
   background: var(--c);
 }
 
 .score {
-  padding-left: 5px;
-  margin-left: 1px;
-  border-left: 1px solid color-mix(in srgb, var(--c) 35%, transparent);
+  font-family: var(--app-font-mono);
+  font-weight: 600;
+  color: var(--app-text);
   font-variant-numeric: tabular-nums;
 }
 </style>
